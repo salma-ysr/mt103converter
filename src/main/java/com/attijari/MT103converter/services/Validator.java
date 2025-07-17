@@ -18,9 +18,9 @@ public class Validator {
      * @param msg le message MT103 à valider
      * @return une liste d’erreurs potentielles
      */
-    public List<ErrorCall> validateMT103(MT103Msg msg) {
+    public ErrorCall validateMT103(MT103Msg msg){
         // Todo
-        return List.of();
+        return new ErrorCall();
     }
 
     /**
@@ -30,8 +30,8 @@ public class Validator {
      * @param xsdPath path vers le fichier XSD
      * @return liste d’erreurs
      */
-    public List<ErrorCall> validatePacs008(String xml, String xsdPath) {
+    public ErrorCall validatePacs008(String xml, String xsdPath) {
         // Todo
-        return List.of();
+        return new ErrorCall();
     }
 }

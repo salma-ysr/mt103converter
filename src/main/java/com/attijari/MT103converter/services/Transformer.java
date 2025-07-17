@@ -18,6 +18,7 @@ public class Transformer {
      */
     public Pacs008Msg transform(MT103Msg mt103) {
         // Todo
-        return null;
+        return new Pacs008Msg("<Document><Fake>data</Fake></Document>"); //pour éviter NullPointerException, modif
+
     }
 }
