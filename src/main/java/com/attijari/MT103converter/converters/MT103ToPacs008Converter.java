@@ -21,8 +21,6 @@ public class MT103ToPacs008Converter {
     @Autowired
     private Transformer transformer;
 
-    private static final String XSD_PATH = "schemas/pacs.008.001.02.xsd";
-
     public String process(String rawMT103) {
         if (rawMT103 == null || rawMT103.isBlank()) {
             return "<error>Erreur: Le message est vide.</error>";
@@ -47,7 +45,7 @@ public class MT103ToPacs008Converter {
         String xml = pacs.generateXML();
 
         // valider XML avec XSD
-        ErrorCall pacsErrors = validator.validatePacs008(xml, XSD_PATH);
+        ErrorCall pacsErrors = validator.validatePacs008(xml);
         if (pacsErrors.hasErrors()) {
             return buildErrorXml("Erreur: Validation XML du pacs.008 échouée.", pacsErrors);
         }

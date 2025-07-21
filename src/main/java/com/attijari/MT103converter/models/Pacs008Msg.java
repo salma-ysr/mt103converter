@@ -14,8 +14,17 @@ public class Pacs008Msg {
     }
 
     public String generateXML() {
-        //Todo: return contenu XML généré
-        return xmlContent;
+        // Génère un XML pacs.008 basique à partir du contenu
+        if (xmlContent != null && !xmlContent.isEmpty()) {
+            return xmlContent;
+        }
+        // Exemple de squelette minimal si xmlContent est vide
+        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+               "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\">\n" +
+               "  <FIToFICustomerCreditTransfer>\n" +
+               "    <!-- Ajoutez ici les éléments requis -->\n" +
+               "  </FIToFICustomerCreditTransfer>\n" +
+               "</Document>";
     }
 
     public boolean validateWithXSD(String xsdPath) {
