@@ -3,9 +3,16 @@ package com.attijari.MT103converter.services;
 import com.attijari.MT103converter.models.MT103Msg;
 import com.attijari.MT103converter.models.Pacs008Msg;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
+
+import static org.apache.tomcat.util.http.FastHttpDateFormat.getCurrentDate;
 
 /**
  * transformer un message MT103 en message pacs.008
@@ -34,31 +41,37 @@ public class Transformer {
         // En-tête XML
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xml.append("<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\">\n");
-        xml.append("  <FIToFICustomerCreditTransfer>\n");
+        xml.append("  <FIToFICstmrCdtTrf>\n");
 
         // GroupHeader (obligatoire)
         xml.append("    <GrpHdr>\n");
         xml.append("      <MsgId>").append(generateMessageId()).append("</MsgId>\n");
         xml.append("      <CreDtTm>").append(getCurrentDateTime()).append("</CreDtTm>\n");
         xml.append("      <NbOfTxs>1</NbOfTxs>\n");
-        xml.append("      <CtrlSum>").append(extractAmount(mt103.getField("32A"))).append("</CtrlSum>\n");
-        xml.append("      <InstgAgt>\n");
-        xml.append("        <FinInstnId>\n");
-        xml.append("          <BICFI>").append(extractSenderBIC(mt103)).append("</BICFI>\n");
-        xml.append("        </FinInstnId>\n");
-        xml.append("      </InstgAgt>\n");
-        xml.append("      <InstdAgt>\n");
-        xml.append("        <FinInstnId>\n");
-        xml.append("          <BICFI>").append(extractReceiverBIC(mt103)).append("</BICFI>\n");
-        xml.append("        </FinInstnId>\n");
-        xml.append("      </InstdAgt>\n");
+
+        //settlement information obligatoire
+        xml.append("    <SttlmInf>\n");
+        xml.append("      <SttlmMtd>CLRG</SttlmMtd>\n");
+        xml.append("      <ClrSys>\n");
+        xml.append("        <Cd>RG</Cd>\n");
+        xml.append("      </ClrSys>\n");
+        xml.append("    </SttlmInf>\n");
         xml.append("    </GrpHdr>\n");
+
+        /* ces balises ne passent pas, elles ne sont pas présentes dans le schéma
+        xml.append("      <CtrlSum>").append(extractAmount(mt103.getField("32A"))).append("</CtrlSum>\n");
+
+         */
 
         // CreditTransferTransactionInformation
         xml.append("    <CdtTrfTxInf>\n");
+
+        //payment ID
         xml.append("      <PmtId>\n");
-        xml.append("        <InstrId>").append(mt103.getField("20")).append("</InstrId>\n");
-        xml.append("        <EndToEndId>").append(mt103.getField("20")).append("</EndToEndId>\n");
+        String paymentId = mt103.getField("20");
+        xml.append("        <InstrId>").append(paymentId).append("</InstrId>\n");
+        xml.append("        <EndToEndId>").append(paymentId).append("</EndToEndId>\n");
+        xml.append("        <UETR>").append(UUID.randomUUID().toString()).append("</UETR>\n");
         xml.append("      </PmtId>\n");
 
         // Payment Type Information
@@ -69,13 +82,29 @@ public class Transformer {
         xml.append("      </PmtTpInf>\n");
 
         // Amount
-        xml.append("      <Amt>\n");
-        xml.append("        <InstdAmt Ccy=\"").append(extractCurrency(mt103.getField("32A"))).append("\">");
-        xml.append(extractAmount(mt103.getField("32A"))).append("</InstdAmt>\n");
-        xml.append("      </Amt>\n");
+        xml.append("      <IntrBkSttlmAmt Ccy=\"").append(extractCurrency(mt103.getField("32A"))).append("\">")
+                .append(extractAmount(mt103.getField("32A"))).append("</IntrBkSttlmAmt>\n");
+
+        // Date règlement interbancaire obligatoire
+        xml.append("      <IntrBkSttlmDt>").append(getCurrentDate()).append("</IntrBkSttlmDt>\n");
 
         // Charges Bearer
         xml.append("      <ChrgBr>").append(mapChargeBearer(mt103.getField("71A"))).append("</ChrgBr>\n");
+
+        // Debtor Agent obligatoire
+        // InstgAgt
+        xml.append("      <InstgAgt>\n");
+        xml.append("        <FinInstnId>\n");
+        xml.append("          <BICFI>").append(extractSenderBIC(mt103)).append("</BICFI>\n");
+        xml.append("        </FinInstnId>\n");
+        xml.append("      </InstgAgt>\n");
+
+        // InstdAgt
+        xml.append("      <InstdAgt>\n");
+        xml.append("        <FinInstnId>\n");
+        xml.append("          <BICFI>").append(extractReceiverBIC(mt103)).append("</BICFI>\n");
+        xml.append("        </FinInstnId>\n");
+        xml.append("      </InstdAgt>\n");
 
         // Debtor (Field 50A/50K)
         xml.append("      <Dbtr>\n");
@@ -98,6 +127,29 @@ public class Transformer {
             xml.append("        </Id>\n");
             xml.append("      </DbtrAcct>\n");
         }
+
+        // Debtor Agent obligatoire
+        xml.append("      <DbtrAgt>\n");
+        xml.append("        <FinInstnId>\n");
+        xml.append("          <BICFI>").append(extractSenderBIC(mt103)).append("</BICFI>\n");
+        xml.append("        </FinInstnId>\n");
+        xml.append("      </DbtrAgt>\n");
+
+        // debitor agent account
+        xml.append("      <DbtrAgtAcct>\n");
+        xml.append("        <Id>\n");
+        xml.append("          <Othr>\n");
+        xml.append("            <Id>").append("AGT123456").append("</Id>\n"); // un ID fictif
+        xml.append("          </Othr>\n");
+        xml.append("        </Id>\n");
+        xml.append("      </DbtrAgtAcct>\n");
+
+        // Creditor Agent
+        xml.append("      <CdtrAgt>\n");
+        xml.append("        <FinInstnId>\n");
+        xml.append("          <BICFI>").append(extractReceiverBIC(mt103)).append("</BICFI>\n");
+        xml.append("        </FinInstnId>\n");
+        xml.append("      </CdtrAgt>\n");
 
         // Creditor (Field 59)
         xml.append("      <Cdtr>\n");
@@ -130,8 +182,13 @@ public class Transformer {
         }
 
         xml.append("    </CdtTrfTxInf>\n");
-        xml.append("  </FIToFICustomerCreditTransfer>\n");
+        xml.append("  </FIToFICstmrCdtTrf>\n");
         xml.append("</Document>");
+
+        //test
+        System.out.println("---- XML GENERATED ----");
+        System.out.println(xml.toString());
+        System.out.println("-----------------------");
 
         return xml.toString();
     }
@@ -142,14 +199,24 @@ public class Transformer {
     }
 
     private String getCurrentDateTime() {
-        return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+        //return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX"); //include décalage horaire
+        String formatted = OffsetDateTime.now(ZoneOffset.systemDefault()).format(formatter);
+        return formatted;
     }
 
     private String extractAmount(String field32A) {
         if (field32A == null || field32A.isEmpty()) return "0.00";
-        // Format 32A: YYMMDDCURRENCYAMOUNT
-        return field32A.length() > 9 ? field32A.substring(9) : "0.00";
+        String raw = field32A.length() > 9 ? field32A.substring(9) : "0.00";
+        raw = raw.replace(",", "."); //la virgule cause des erreurs
+        try {
+            BigDecimal amount = new BigDecimal(raw);
+            return amount.setScale(2, RoundingMode.HALF_UP).toPlainString(); //forcer un décimal valide
+        } catch (NumberFormatException e) {
+            return "0.00";
+        }
     }
+
 
     private String extractCurrency(String field32A) {
         if (field32A == null || field32A.isEmpty()) return "EUR";
@@ -218,8 +285,16 @@ public class Transformer {
     private String extractAccount(String field) {
         if (field == null || field.isEmpty()) return "";
         String firstLine = field.split("\n")[0];
-        // Extrait le numéro de compte de la première ligne
+        // enlever le "/"
+        if (firstLine.startsWith("/")) {
+            firstLine = firstLine.substring(1);
+        }
         String[] parts = firstLine.split("\\s+");
         return parts.length > 0 ? parts[0] : "";
     }
+
+    private String getCurrentDate() {
+        return java.time.LocalDate.now().toString();
+    }
+
 }

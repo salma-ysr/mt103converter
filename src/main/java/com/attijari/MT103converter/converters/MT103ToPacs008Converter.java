@@ -3,6 +3,7 @@ package com.attijari.MT103converter.converters;
 import com.attijari.MT103converter.models.ErrorCall;
 import com.attijari.MT103converter.models.MT103Msg;
 import com.attijari.MT103converter.models.Pacs008Msg;
+import com.attijari.MT103converter.repositories.MT103MsgRepository;
 import com.attijari.MT103converter.services.MT103Parser;
 import com.attijari.MT103converter.services.Transformer;
 import com.attijari.MT103converter.services.Validator;
@@ -21,6 +22,9 @@ public class MT103ToPacs008Converter {
     @Autowired
     private Transformer transformer;
 
+    @Autowired
+    private MT103MsgRepository repository;
+
     public String process(String rawMT103) {
         if (rawMT103 == null || rawMT103.isBlank()) {
             return "<error>Erreur: Le message est vide.</error>";
@@ -28,6 +32,9 @@ public class MT103ToPacs008Converter {
 
         //parser
         MT103Msg mt103 = parser.parse(rawMT103);
+
+        // sauvegarder
+        repository.save(mt103);
 
         //valider MT103
         ErrorCall mt103Errors = validator.validateMT103(mt103);

@@ -27,8 +27,8 @@ public class Validator {
     public ErrorCall validateMT103(MT103Msg msg){
         ErrorCall errors = new ErrorCall();
         // Liste des tags obligatoires pour MT103
-        String[] requiredTags = {"20", "23B", "32A", "50A", "50K", "59", "71A"};
-        for (String tag : requiredTags) {
+        String[] requiredTags = {"20", "23B", "32A", "59", "71A"};
+        for (String tag : requiredTags) { //ne pas inclure 50A et 50K ici, vérifiés après
             String value = msg.getField(tag);
             if (value == null || value.trim().isEmpty()) {
                 errors.addError("Champ obligatoire manquant ou vide: " + tag);
