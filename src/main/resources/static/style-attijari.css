@@ -1,0 +1,232 @@
+body {
+    background: #181818;
+    color: #fff;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    margin: 0;
+    min-height: 100vh;
+}
+header {
+    background: linear-gradient(90deg, #ffb300 0%, #ff9800 60%, #181818 100%);
+    padding: 1.5rem 0;
+    text-align: center;
+}
+.logo {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #181818;
+    letter-spacing: 2px;
+    text-shadow: 1px 1px 0 #fff200, 2px 2px 0 #ff9800;
+}
+main {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 80vh;
+    padding: 2rem 0;
+}
+.converter {
+    background: #222;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px #0008;
+    padding: 2rem 2.5rem;
+    max-width: 540px;
+    width: 100%;
+}
+h1 {
+    color: #ffb300;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+label {
+    font-weight: 600;
+    color: #fff200;
+}
+textarea {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid #ff9800;
+    background: #181818;
+    color: #fff;
+    font-size: 1rem;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    resize: vertical;
+}
+button {
+    background: linear-gradient(90deg, #ffb300 0%, #ff9800 100%);
+    color: #181818;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    padding: 0.75rem 2rem;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-bottom: 1rem;
+}
+button:hover {
+    background: linear-gradient(90deg, #ff9800 0%, #ffb300 100%);
+}
+#errorSection {
+    background: #ff9800;
+    color: #181818;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-top: 1rem;
+    font-weight: bold;
+    text-align: center;
+}
+footer {
+    background: #181818;
+    color: #ffb300;
+    text-align: center;
+    padding: 1rem 0 0.5rem 0;
+    font-size: 1rem;
+    letter-spacing: 1px;
+}
+.attj-btn, button#downloadBtn {
+    background: linear-gradient(90deg, #ffb300 0%, #ff9800 100%);
+    color: #181818;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    padding: 0.75rem 2rem;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px #ffb30044;
+    letter-spacing: 1px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+}
+.attj-btn:hover, button#downloadBtn:hover {
+    background: linear-gradient(90deg, #ff9800 0%, #ffb300 100%);
+    box-shadow: 0 4px 16px #ff980044;
+    transform: translateY(-2px) scale(1.03);
+}
+button#downloadBtn::before {
+    content: '\1F4E5'; /* 📥 emoji */
+    font-size: 1.2em;
+    margin-right: 0.4em;
+}
+input[type="file"] {
+    display: none;
+}
+
+.file-upload {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.file-upload label {
+    display: inline-block;
+    background: linear-gradient(135deg, #333 0%, #444 100%);
+    border: 2px dashed #ff9800;
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    color: #fff200;
+    font-weight: 600;
+    position: relative;
+    overflow: hidden;
+}
+
+.file-upload label:hover {
+    border-color: #ffb300;
+    background: linear-gradient(135deg, #444 0%, #555 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px #ff980033;
+}
+
+.file-upload label::before {
+    content: '📁';
+    font-size: 1.5em;
+    margin-right: 0.5em;
+    display: inline-block;
+}
+
+.file-upload label::after {
+    content: 'Cliquez pour sélectionner un fichier MT103';
+    display: block;
+    font-size: 0.9em;
+    color: #ccc;
+    margin-top: 0.3em;
+}
+
+.file-upload input[type="file"]:focus + label {
+    outline: 2px solid #ffb300;
+    outline-offset: 2px;
+}
+
+.attj-header {
+    background: linear-gradient(90deg, #ffb300 0%, #ff9800 60%, #181818 100%);
+    padding: 1.5rem 0;
+    text-align: center;
+}
+
+.attj-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.attj-logo-image {
+    height: 60px;
+    width: auto;
+    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+}
+
+.attj-logo-text {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #181818;
+    letter-spacing: 2px;
+    text-shadow: 1px 1px 0 #fff200, 2px 2px 0 #ff9800;
+}
+
+.attj-converter-card {
+    background: #222;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px #0008;
+    padding: 2rem 2.5rem;
+    max-width: 600px;
+    width: 100%;
+}
+
+.attj-desc {
+    color: #ccc;
+    text-align: center;
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+    line-height: 1.5;
+}
+
+.attj-form-group {
+    margin-bottom: 1.5rem;
+}
+
+.attj-form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #fff200;
+}
+
+.attj-form-actions {
+    text-align: center;
+    margin-top: 2rem;
+}
+
+.attj-footer {
+    background: #181818;
+    color: #ffb300;
+    text-align: center;
+    padding: 1rem 0 0.5rem 0;
+    font-size: 1rem;
+    letter-spacing: 1px;
+}

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attijari MT103 → pacs.008</title>
+    <link rel="stylesheet" href="/style-attijari.css">
+</head>
+<body>
+    <header class="attj-header">
+        <div class="attj-logo">
+            <img src="/LogoAttijari.png" alt="Attijari Logo" class="attj-logo-image">
+            <span class="attj-logo-text">Attijari MT103 Converter</span>
+        </div>
+    </header>
+    <main>
+        <section class="attj-converter-card">
+            <h1>Convertisseur MT103 &rarr; pacs.008</h1>
+            <p class="attj-desc">Collez ou importez un message MT103 pour obtenir instantanément son équivalent pacs.008 (XML SEPA ISO20022).</p>
+            <form id="convertForm">
+                <div class="attj-form-group">
+                    <label for="mt103">Message MT103</label>
+                    <textarea id="mt103" name="mt103" rows="10" required placeholder=":20:TRX12345&#10;:23B:CRED&#10;:32A:250722EUR12345,67&#10;:50A:/12345678&#10;JOHN DOE&#10;:59:/87654321&#10;JANE SMITH&#10;:71A:SHA"></textarea>
+                </div>
+                <div class="attj-form-group file-upload">
+                    <label for="mt103File">Ou importer un fichier MT103</label>
+                    <input type="file" id="mt103File" accept=".txt,.mt103,.swift,.fin" />
+                </div>
+                <div class="attj-form-actions">
+                    <button type="submit" class="attj-btn">Convertir</button>
+                </div>
+            </form>
+            <div id="resultSection" style="display:none;">
+                <h2>Résultat pacs.008 (XML)</h2>
+                <textarea id="xmlResult" rows="10" readonly></textarea>
+                <button id="downloadBtn" class="attj-btn">Télécharger XML</button>
+            </div>
+            <div id="errorSection" style="display:none;"></div>
+        </section>
+    </main>
+    <footer class="attj-footer">
+        <span>© 2025 Attijari MT103 Converter</span>
+    </footer>
+    <script src="/attijari-converter.js"></script>
+</body>
+</html>

@@ -9,5 +9,5 @@ public class Mt103converterApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(Mt103converterApplication.class, args);
 	}
-	//check Spring loading:  http://localhost:8080
+	//check Spring loading: http://localhost:8080
 }
