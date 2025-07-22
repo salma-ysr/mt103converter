@@ -9,6 +9,7 @@ import com.attijari.MT103converter.services.Transformer;
 import com.attijari.MT103converter.services.Validator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import java.util.List;
 
 @Component
 public class MT103ToPacs008Converter {
@@ -35,6 +36,8 @@ public class MT103ToPacs008Converter {
 
         // sauvegarder
         repository.save(mt103);
+        System.out.println("Message sauvegardé sur MongoDB avec ID: " + mt103.getId());
+
 
         //valider MT103
         ErrorCall mt103Errors = validator.validateMT103(mt103);
@@ -59,6 +62,10 @@ public class MT103ToPacs008Converter {
 
         //retourner XML final
         return xml;
+    }
+
+    public List<MT103Msg> getAllMessages() {
+        return repository.findAll();
     }
 
     private String buildErrorXml(String title, ErrorCall errors) {

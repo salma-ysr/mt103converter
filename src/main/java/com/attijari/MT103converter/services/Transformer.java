@@ -58,9 +58,8 @@ public class Transformer {
         xml.append("    </SttlmInf>\n");
         xml.append("    </GrpHdr>\n");
 
-        /* ces balises ne passent pas, elles ne sont pas présentes dans le schéma
+        /*
         xml.append("      <CtrlSum>").append(extractAmount(mt103.getField("32A"))).append("</CtrlSum>\n");
-
          */
 
         // CreditTransferTransactionInformation
@@ -91,7 +90,6 @@ public class Transformer {
         // Charges Bearer
         xml.append("      <ChrgBr>").append(mapChargeBearer(mt103.getField("71A"))).append("</ChrgBr>\n");
 
-        // Debtor Agent obligatoire
         // InstgAgt
         xml.append("      <InstgAgt>\n");
         xml.append("        <FinInstnId>\n");

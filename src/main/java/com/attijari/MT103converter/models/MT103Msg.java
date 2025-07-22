@@ -3,6 +3,9 @@ package com.attijari.MT103converter.models;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.Map;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.mongodb.core.mapping.Field;
+import java.time.LocalDateTime;
 
 @Document(collection = "MT103")
 public class MT103Msg {
@@ -16,6 +19,10 @@ public class MT103Msg {
     public MT103Msg() {
         //bare constructor
     }
+        //timestamps pour l'historique
+        @CreatedDate
+        private LocalDateTime createdAt = LocalDateTime.now();
+
 
     public MT103Msg(String rawContent, Map<String, String> fields) {
         this.rawContent = rawContent;
@@ -40,7 +47,6 @@ public class MT103Msg {
         return validFlag;
     }
 
-    // getters and setters (use Lombok?)
     public String getRawContent() {
         return rawContent;
     }
@@ -56,11 +62,15 @@ public class MT103Msg {
         this.fields = fields;
     }
 
+    public void setId(String id) {
+        this.id = id;
+    }
+
     public String getId() {
         return id;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 }

@@ -17,6 +17,7 @@
         <section class="attj-converter-card">
             <h1>Convertisseur MT103 &rarr; pacs.008</h1>
             <p class="attj-desc">Collez ou importez un message MT103 pour obtenir instantanément son équivalent pacs.008 (XML SEPA ISO20022).</p>
+
             <form id="convertForm">
                 <div class="attj-form-group">
                     <label for="mt103">Message MT103</label>
@@ -26,10 +27,25 @@
                     <label for="mt103File">Ou importer un fichier MT103</label>
                     <input type="file" id="mt103File" accept=".txt,.mt103,.swift,.fin" />
                 </div>
-                <div class="attj-form-actions">
+                <div class="attj-form-actions" style="display:flex; justify-content:center; align-items:center; gap:1.5rem; flex-wrap:wrap;">
                     <button type="submit" class="attj-btn">Convertir</button>
+                    <a href="#" id="historyToggle" style="color:#ff9800; text-decoration:underline; font-weight:500;">Afficher l'historique</a>
                 </div>
             </form>
+
+            <div id="historySection" style="display:none; margin-top: 2rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 1rem;">
+                    <h2 style="margin: 0;">Historique</h2>
+                    <div style="display:flex; gap:0.75rem;">
+                        <button id="closeHistory" class="attj-btn" style="padding:0.4rem 1.5rem;font-size:0.9rem;background:#d45f3b;">Fermer</button>
+                        <button id="clearHistory" class="attj-btn" style="padding:0.4rem 1.5rem;font-size:0.9rem;background:#d45f3b;">Effacer l'historique</button>
+                    </div>
+                </div>
+
+                <ul id="historyList" style="list-style:none; padding-left: 0; margin-top: 1.5rem;"></ul>
+            </div>
+
+
             <div id="resultSection" style="display:none;">
                 <h2>Résultat pacs.008 (XML)</h2>
                 <textarea id="xmlResult" rows="10" readonly></textarea>
