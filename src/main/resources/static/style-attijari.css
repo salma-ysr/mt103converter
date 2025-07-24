@@ -68,14 +68,52 @@ button:hover {
     background: linear-gradient(90deg, #ff9800 0%, #ffb300 100%);
 }
 #errorSection {
-    background: #ff9800;
-    color: #181818;
-    border-radius: 6px;
-    padding: 1rem;
-    margin-top: 1rem;
-    font-weight: bold;
-    text-align: center;
+    background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+    color: #fff;
+    border-radius: 8px;
+    padding: 0;
+    margin-top: 1.5rem;
+    border: 2px solid #ff6666;
+    box-shadow: 0 4px 12px rgba(255, 68, 68, 0.3);
+    overflow: hidden;
 }
+
+.error-header {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.error-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.error-content {
+    padding: 1.5rem;
+}
+
+.error-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+    border-radius: 6px;
+    border-left: 4px solid #ffff00;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.error-item:last-child {
+    margin-bottom: 0;
+}
+
+.error-item:before {
+    content: "⚠️ ";
+    margin-right: 0.5rem;
+}
+
 footer {
     background: #181818;
     color: #ffb300;
@@ -266,4 +304,3 @@ input[type="file"] {
     white-space: pre-wrap;
     word-break: break-word;
 }
-

@@ -22,17 +22,18 @@ public class MT103Controller {
     }
 
 
-    @PostMapping(value = "/convert", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.APPLICATION_XML_VALUE)
-    public ResponseEntity<String> convertMt103(@RequestBody String rawMt103) {
-        String result = converter.process(rawMt103);
+    @PostMapping(value = "/convert", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ConversionResponse> convertMt103(@RequestBody String rawMt103) {
+        MT103ToPacs008Converter.ConversionResult result = converter.process(rawMt103);
 
-        // détecter erreur XML & donner code HTTP400
-        if (result.contains("<error>")) {
-            return ResponseEntity.badRequest().body(result);
+        if (result.isSuccess()) {
+            return ResponseEntity.ok(new ConversionResponse(true, result.getXmlContent(), null));
+        } else {
+            return ResponseEntity.badRequest()
+                    .body(new ConversionResponse(false, null, result.getErrorMessage()));
         }
-
-        return ResponseEntity.ok(result);
     }
+
     //historique de messages entrés
     @GetMapping("/history")
     public ResponseEntity<List<MT103Msg>> getHistory() {
@@ -44,5 +45,30 @@ public class MT103Controller {
     public ResponseEntity<Void> clearHistory() {
         repository.deleteAll();
         return ResponseEntity.noContent().build();
+    }
+
+    // Classe pour la réponse JSON
+    public static class ConversionResponse {
+        private boolean success;
+        private String xmlContent;
+        private String errorMessage;
+
+        public ConversionResponse(boolean success, String xmlContent, String errorMessage) {
+            this.success = success;
+            this.xmlContent = xmlContent;
+            this.errorMessage = errorMessage;
+        }
+
+        public boolean isSuccess() {
+            return success;
+        }
+
+        public String getXmlContent() {
+            return xmlContent;
+        }
+
+        public String getErrorMessage() {
+            return errorMessage;
+        }
     }
 }

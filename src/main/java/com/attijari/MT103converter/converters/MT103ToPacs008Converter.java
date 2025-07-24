@@ -26,9 +26,9 @@ public class MT103ToPacs008Converter {
     @Autowired
     private MT103MsgRepository repository;
 
-    public String process(String rawMT103) {
+    public ConversionResult process(String rawMT103) {
         if (rawMT103 == null || rawMT103.isBlank()) {
-            return "<error>Erreur: Le message est vide.</error>";
+            return new ConversionResult(false, null, "Le message MT103 est vide.");
         }
 
         //parser
@@ -42,13 +42,17 @@ public class MT103ToPacs008Converter {
         //valider MT103
         ErrorCall mt103Errors = validator.validateMT103(mt103);
         if (mt103Errors.hasErrors()) {
-            return buildErrorXml("Erreur: Validation du MT103 échouée.", mt103Errors);
+            StringBuilder errorMsg = new StringBuilder();
+            for (String err : mt103Errors.getErrors()) {
+                errorMsg.append("• ").append(err).append("\n");
+            }
+            return new ConversionResult(false, null, errorMsg.toString().trim());
         }
 
         // transformer
         Pacs008Msg pacs = transformer.transform(mt103);
         if (pacs == null || pacs.getXmlContent() == null) {
-            return "<error>Erreur: Transformation échouée.</error>";
+            return new ConversionResult(false, null, "Erreur lors de la transformation du message MT103.");
         }
 
         // générer XML
@@ -57,25 +61,43 @@ public class MT103ToPacs008Converter {
         // valider XML avec XSD
         ErrorCall pacsErrors = validator.validatePacs008(xml);
         if (pacsErrors.hasErrors()) {
-            return buildErrorXml("Erreur: Validation XML du pacs.008 échouée.", pacsErrors);
+            StringBuilder errorMsg = new StringBuilder();
+            for (String err : pacsErrors.getErrors()) {
+                errorMsg.append("• ").append(err).append("\n");
+            }
+            return new ConversionResult(false, null, errorMsg.toString().trim());
         }
 
         //retourner XML final
-        return xml;
+        return new ConversionResult(true, xml, null);
     }
 
     public List<MT103Msg> getAllMessages() {
         return repository.findAll();
     }
 
-    private String buildErrorXml(String title, ErrorCall errors) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("<error>\n");
-        sb.append("  <title>").append(title).append("</title>\n");
-        for (String err : errors.getErrors()) {
-            sb.append("  <detail>").append(err).append("</detail>\n");
+    // Classe interne pour le résultat de conversion
+    public static class ConversionResult {
+        private boolean success;
+        private String xmlContent;
+        private String errorMessage;
+
+        public ConversionResult(boolean success, String xmlContent, String errorMessage) {
+            this.success = success;
+            this.xmlContent = xmlContent;
+            this.errorMessage = errorMessage;
         }
-        sb.append("</error>");
-        return sb.toString();
+
+        public boolean isSuccess() {
+            return success;
+        }
+
+        public String getXmlContent() {
+            return xmlContent;
+        }
+
+        public String getErrorMessage() {
+            return errorMessage;
+        }
     }
 }

@@ -26,19 +26,78 @@ public class Validator {
      */
     public ErrorCall validateMT103(MT103Msg msg){
         ErrorCall errors = new ErrorCall();
-        // Liste des tags obligatoires pour MT103
-        String[] requiredTags = {"20", "23B", "32A", "59", "71A"};
-        for (String tag : requiredTags) {
-            String value = msg.getField(tag);
-            if (value == null || value.trim().isEmpty()) {
-                errors.addError("Champ obligatoire manquant ou vide: " + tag);
+
+        // Vérification du champ 20 (Reference Transaction)
+        String value = msg.getField("20");
+        if (value == null || value.trim().isEmpty()) {
+            errors.addError("Le champ Référence de transaction (:20) est manquant");
+        }
+
+        // Vérification du champ 23B (Bank Operation Code)
+        value = msg.getField("23B");
+        if (value == null || value.trim().isEmpty()) {
+            errors.addError("Le champ Code opération bancaire (:23B) est manquant");
+        }
+
+        // Vérification du champ 32A (Value Date/Currency/Amount)
+        value = msg.getField("32A");
+        if (value == null || value.trim().isEmpty()) {
+            errors.addError("Le champ Date valeur/Devise/Montant (:32A) est manquant");
+        }
+
+        // Vérification du champ 59 (Beneficiary)
+        value = msg.getField("59");
+        if (value == null || value.trim().isEmpty()) {
+            errors.addError("Le champ Bénéficiaire (:59) est manquant");
+        }
+
+        // Vérification du champ 71A (Charges)
+        value = msg.getField("71A");
+        if (value == null || value.trim().isEmpty()) {
+            errors.addError("Le champ Répartition des frais (:71A) est manquant");
+        }
+
+        // Si ni 50A ni 50K n'est présent, erreur
+        if ((msg.getField("50A") == null || msg.getField("50A").trim().isEmpty()) &&
+            (msg.getField("50K") == null || msg.getField("50K").trim().isEmpty())) {
+            errors.addError("Le champ Donneur d'ordre (:50A ou :50K) est manquant");
+        }
+
+        // Validation additionnelle du format des champs si présents
+        validateFieldFormats(msg, errors);
+
+        return errors;
+    }
+
+    /**
+     * Valide le format des champs présents pour donner des conseils d'amélioration
+     */
+    private void validateFieldFormats(MT103Msg msg, ErrorCall errors) {
+        // Validation du champ 32A (format attendu: YYMMDDCCCNNNNN)
+        String field32A = msg.getField("32A");
+        if (field32A != null && !field32A.trim().isEmpty()) {
+            if (field32A.length() < 9) {
+                errors.addError("Le champ :32A a un format incorrect. Format attendu: AAMMJJDDDMONTANT");
             }
         }
-        // Si ni 50A ni 50K n'est présent, erreur
-        if (msg.getField("50A").isEmpty() && msg.getField("50K").isEmpty()) {
-            errors.addError("Un des champs 50A ou 50K doit être présent.");
+
+        // Validation du champ 71A (valeurs autorisées)
+        String field71A = msg.getField("71A");
+        if (field71A != null && !field71A.trim().isEmpty()) {
+            String charges = field71A.trim().toUpperCase();
+            if (!charges.equals("OUR") && !charges.equals("BEN") && !charges.equals("SHA")) {
+                errors.addError("Le champ :71A a une valeur incorrecte. Valeurs autorisées: OUR, BEN, SHA");
+            }
         }
-        return errors;
+
+        // Validation du champ 23B
+        String field23B = msg.getField("23B");
+        if (field23B != null && !field23B.trim().isEmpty()) {
+            String code = field23B.trim().toUpperCase();
+            if (!code.equals("CRED") && !code.equals("SPAY") && !code.equals("PHON") && !code.equals("HOLD")) {
+                errors.addError("Le champ :23B a une valeur inhabituelle. Codes recommandés: CRED, SPAY, PHON, HOLD");
+            }
+        }
     }
 
 

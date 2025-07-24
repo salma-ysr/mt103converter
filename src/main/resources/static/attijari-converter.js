@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         resultSection.style.display = 'none';
         errorSection.style.display = 'none';
-        errorSection.textContent = '';
+        errorSection.innerHTML = '';
         xmlResult.value = '';
 
         const mt103 = document.getElementById('mt103').value;
@@ -19,17 +19,34 @@ document.addEventListener('DOMContentLoaded', function() {
             body: mt103
         })
         .then(async response => {
-            const text = await response.text();
-            if (response.ok && !text.includes('<error>')) {
-                xmlResult.value = text;
+            const data = await response.json();
+
+            if (data.success) {
+                // Conversion réussie - afficher le XML
+                xmlResult.value = data.xmlContent;
                 resultSection.style.display = 'block';
             } else {
-                errorSection.innerHTML = '<b>Erreur :</b><br>' + text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                // Erreur de conversion - afficher dans la zone d'erreur
+                errorSection.innerHTML = `
+                    <div class="error-header">
+                        <h3>❌ Erreurs de validation MT103</h3>
+                    </div>
+                    <div class="error-content">
+                        ${data.errorMessage.split('\n').map(line => `<div class="error-item">${line}</div>`).join('')}
+                    </div>
+                `;
                 errorSection.style.display = 'block';
             }
         })
-        .catch(() => {
-            errorSection.textContent = 'Erreur réseau ou serveur.';
+        .catch(error => {
+            errorSection.innerHTML = `
+                <div class="error-header">
+                    <h3>❌ Erreur de connexion</h3>
+                </div>
+                <div class="error-content">
+                    <div class="error-item">Impossible de se connecter au serveur. Veuillez réessayer.</div>
+                </div>
+            `;
             errorSection.style.display = 'block';
         });
     });
@@ -130,5 +147,3 @@ clearHistory.addEventListener('click', function() {
         });
     }
 });
-
-
