@@ -45,13 +45,20 @@
                 <ul id="historyList" style="list-style:none; padding-left: 0; margin-top: 1.5rem;"></ul>
             </div>
 
-
             <div id="resultSection" style="display:none;">
                 <h2>Résultat pacs.008 (XML)</h2>
                 <textarea id="xmlResult" rows="10" readonly></textarea>
                 <button id="downloadBtn" class="attj-btn">Télécharger XML</button>
             </div>
-            <div id="errorSection" style="display:none;"></div>
+
+            <!-- Zone d'erreur dédiée -->
+            <div id="errorSection" class="attj-error-section" style="display:none;">
+                <div class="error-header">
+                    <h3>⚠️ Erreurs de validation</h3>
+                    <button id="closeErrors" class="close-btn">×</button>
+                </div>
+                <div id="errorContent" class="error-content"></div>
+            </div>
         </section>
     </main>
     <footer class="attj-footer">

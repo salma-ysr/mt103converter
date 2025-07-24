@@ -2,17 +2,33 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('convertForm');
     const resultSection = document.getElementById('resultSection');
     const errorSection = document.getElementById('errorSection');
+    const errorContent = document.getElementById('errorContent');
     const xmlResult = document.getElementById('xmlResult');
     const downloadBtn = document.getElementById('downloadBtn');
+    const closeErrors = document.getElementById('closeErrors');
+
+    // Gestionnaire pour fermer la zone d'erreur
+    closeErrors.addEventListener('click', function() {
+        errorSection.style.display = 'none';
+    });
 
     form.addEventListener('submit', function(e) {
         e.preventDefault();
+
+        // Réinitialiser l'affichage
         resultSection.style.display = 'none';
         errorSection.style.display = 'none';
-        errorSection.innerHTML = '';
+        errorContent.innerHTML = '';
         xmlResult.value = '';
 
         const mt103 = document.getElementById('mt103').value;
+
+        // Validation côté client basique
+        if (!mt103.trim()) {
+            showError('Le message MT103 ne peut pas être vide.');
+            return;
+        }
+
         fetch('/api/convert', {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
@@ -25,31 +41,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Conversion réussie - afficher le XML
                 xmlResult.value = data.xmlContent;
                 resultSection.style.display = 'block';
+                // Faire défiler vers le résultat
+                resultSection.scrollIntoView({ behavior: 'smooth' });
             } else {
-                // Erreur de conversion - afficher dans la zone d'erreur
-                errorSection.innerHTML = `
-                    <div class="error-header">
-                        <h3>❌ Erreurs de validation MT103</h3>
-                    </div>
-                    <div class="error-content">
-                        ${data.errorMessage.split('\n').map(line => `<div class="error-item">${line}</div>`).join('')}
-                    </div>
-                `;
-                errorSection.style.display = 'block';
+                // Erreur de conversion - afficher dans la zone d'erreur dédiée
+                showError(data.errorMessage);
             }
         })
         .catch(error => {
-            errorSection.innerHTML = `
-                <div class="error-header">
-                    <h3>❌ Erreur de connexion</h3>
-                </div>
-                <div class="error-content">
-                    <div class="error-item">Impossible de se connecter au serveur. Veuillez réessayer.</div>
-                </div>
-            `;
-            errorSection.style.display = 'block';
+            showError('Impossible de se connecter au serveur. Veuillez réessayer.');
         });
     });
+
+    function showError(errorMessage) {
+        // Traiter les erreurs multiples
+        const errors = errorMessage.split('\n').filter(line => line.trim());
+
+        errorContent.innerHTML = errors.map(error => {
+            // Nettoyer le message d'erreur (enlever les • au début)
+            const cleanError = error.replace(/^[•\s]+/, '').trim();
+            return `<div class="error-item">${cleanError}</div>`;
+        }).join('');
+
+        errorSection.style.display = 'block';
+        // Faire défiler vers la zone d'erreur
+        errorSection.scrollIntoView({ behavior: 'smooth' });
+    }
 
     downloadBtn.addEventListener('click', function() {
         const blob = new Blob([xmlResult.value], { type: 'application/xml' });
