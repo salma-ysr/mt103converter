@@ -1,3 +1,24 @@
+//pour résumer les choses dans l'historique
+function extraireChamp(texte, tag) {
+    const regex = new RegExp(tag + '(.*)', 'i');
+    const match = texte.match(regex);
+    if (!match) return '---';
+    const ligne = match[1].trim().split('\n')[0];
+    return tag === ':32A:' && ligne.length >= 9
+        ? ligne.slice(6, 9) + ' ' + ligne.slice(9)
+        : ligne;
+}
+
+//pour bien afficher le xml dans l'historique
+function escapeHtml(unsafe) {
+    if (!unsafe) return 'Erreurs de validation MT103';
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
+
+
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('convertForm');
     const resultSection = document.getElementById('resultSection');
@@ -117,16 +138,33 @@ historyToggle.addEventListener('click', function(e) {
                     const formattedDate = date.toLocaleString('fr-FR', options);
 
                     li.innerHTML = `
-                            <div style="background:#333; padding:1rem; border-radius:6px; border:1px solid #ff9800;">
-                            <div style="color:##ff9800;font-size:0.9rem;margin-bottom:0.5rem;">${formattedDate}</div>
-                            <pre style="white-space:pre-wrap;color:#ccc;">${msg.rawContent}</pre>
-
-                            <button class="attj-btn" type="button" style="margin-top:0.5rem;" onclick="reuseMessage(\`${msg.rawContent.replace(/`/g, '\\`')}\`)">Réutiliser</button>
+                        <div style="background:#333; padding:1rem; border-radius:6px; border:1px solid #ff9800;">
+                            <div style="color:#ff9800; font-size:0.9rem; margin-bottom:0.5rem;">${formattedDate}</div>
+                            <div style="font-size:0.95rem; margin-bottom:0.5rem; color:#fff;">
+                                ID: <strong>${extraireChamp(msg.rawContent, ':20:')}</strong> |
+                                Montant: <strong>${extraireChamp(msg.rawContent, ':32A:')}</strong>
+                            </div>
+                            <button class="attj-btn toggle-details-btn" type="button">Voir détails</button>
+                            <div class="entry-details" style="display:none; margin-top:1rem;">
+                                <h4 style="color:#fff200;">MT103 :</h4>
+                                <pre style="white-space:pre-wrap; background:#222; color:#ccc; padding:1rem; border-left:4px solid #ffb300;">${msg.rawContent}</pre>
+                                <h4 style="color:#80dfff;">pacs.008 :</h4>
+                                <pre style="white-space:pre-wrap; background:#222; color:#8dd; padding:1rem; border-left:4px solid #2196f3;">${escapeHtml(msg.pacs008Xml)}</pre>
+                            </div>
                         </div>
                     `;
                     historyList.appendChild(li);
                 });
 
+                // toggle détails
+                document.querySelectorAll('.toggle-details-btn').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const details = this.nextElementSibling;
+                        const isVisible = details.style.display === 'block';
+                        details.style.display = isVisible ? 'none' : 'block';
+                        this.textContent = isVisible ? 'Voir détails' : 'Masquer détails';
+                    });
+                });
             }
             historySection.style.display = 'block';
         })
@@ -136,11 +174,7 @@ historyToggle.addEventListener('click', function(e) {
         });
 });
 
-window.reuseMessage = function(content) {
-    document.getElementById('mt103').value = content;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    historySection.style.display = 'none';
-};
+
 
 closeHistory.addEventListener('click', function() {
     historySection.style.display = 'none';
