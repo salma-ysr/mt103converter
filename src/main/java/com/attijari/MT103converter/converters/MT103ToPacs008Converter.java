@@ -34,9 +34,6 @@ public class MT103ToPacs008Converter {
         //parser
         MT103Msg mt103 = parser.parse(rawMT103);
 
-        // sauvegarder
-        repository.save(mt103);
-        System.out.println("Message sauvegardé sur MongoDB avec ID: " + mt103.getId());
 
 
         //valider MT103
@@ -65,8 +62,18 @@ public class MT103ToPacs008Converter {
             for (String err : pacsErrors.getErrors()) {
                 errorMsg.append("• ").append(err).append("\n");
             }
-            return new ConversionResult(false, null, errorMsg.toString().trim());
+            if (mt103Errors.hasErrors()) {
+                return new ConversionResult(false, null, errorMsg.toString().trim());
+            }
         }
+        // pas sauvegarder si erreurs
+        if (pacs == null || pacs.getXmlContent() == null) {
+            return new ConversionResult(false, null, "Erreur lors de la transformation du message MT103.");
+        }
+
+
+        mt103.setPacs008Xml(xml);
+        repository.save(mt103);
 
         //retourner XML final
         return new ConversionResult(true, xml, null);
@@ -100,4 +107,5 @@ public class MT103ToPacs008Converter {
             return errorMessage;
         }
     }
+
 }

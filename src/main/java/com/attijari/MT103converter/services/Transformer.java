@@ -206,7 +206,7 @@ public class Transformer {
     private String extractAmount(String field32A) {
         if (field32A == null || field32A.isEmpty()) return "0.00";
         String raw = field32A.length() > 9 ? field32A.substring(9) : "0.00";
-        raw = raw.replace(",", "."); //la virgule cause des erreurs
+        raw = raw.replace(",", ".");
         try {
             BigDecimal amount = new BigDecimal(raw);
             return amount.setScale(2, RoundingMode.HALF_UP).toPlainString(); //forcer un décimal valide

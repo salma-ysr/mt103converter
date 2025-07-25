@@ -15,6 +15,18 @@ public class MT103Msg {
 
     private String rawContent;
     private Map<String, String> fields;
+    @Field("pacs008Xml")
+    private String pacs008Xml;
+
+
+    public String getPacs008Xml() {
+        return pacs008Xml;
+    }
+
+    public void setPacs008Xml(String pacs008Xml) {
+        this.pacs008Xml = pacs008Xml;
+    }
+
 
     public MT103Msg() {
         //bare constructor
