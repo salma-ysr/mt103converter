@@ -3,10 +3,12 @@ package com.attijari.MT103converter.controllers;
 import com.attijari.MT103converter.converters.MT103ToPacs008Converter;
 import com.attijari.MT103converter.models.MT103Msg;
 import com.attijari.MT103converter.repositories.MT103MsgRepository;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
@@ -45,6 +47,46 @@ public class MT103Controller {
     public ResponseEntity<Void> clearHistory() {
         repository.deleteAll();
         return ResponseEntity.noContent().build();
+    }
+
+    // Télécharger le contenu MT103 depuis l'historique
+    @GetMapping("/history/{id}/download/mt103")
+    public ResponseEntity<String> downloadMT103FromHistory(@PathVariable String id) {
+        Optional<MT103Msg> messageOpt = repository.findById(id);
+        if (messageOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        MT103Msg message = messageOpt.get();
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=MT103_" + id + ".txt");
+        headers.add(HttpHeaders.CONTENT_TYPE, "text/plain; charset=utf-8");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(message.getRawContent());
+    }
+
+    // Télécharger le contenu XML depuis l'historique
+    @GetMapping("/history/{id}/download/xml")
+    public ResponseEntity<String> downloadXMLFromHistory(@PathVariable String id) {
+        Optional<MT103Msg> messageOpt = repository.findById(id);
+        if (messageOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        MT103Msg message = messageOpt.get();
+        if (message.getPacs008Xml() == null || message.getPacs008Xml().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=pacs008_" + id + ".xml");
+        headers.add(HttpHeaders.CONTENT_TYPE, "application/xml; charset=utf-8");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(message.getPacs008Xml());
     }
 
     // Classe pour la réponse JSON

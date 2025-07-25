@@ -148,8 +148,15 @@ historyToggle.addEventListener('click', function(e) {
                             <div class="entry-details" style="display:none; margin-top:1rem;">
                                 <h4 style="color:#fff200;">MT103 :</h4>
                                 <pre style="white-space:pre-wrap; background:#222; color:#ccc; padding:1rem; border-left:4px solid #ffb300;">${msg.rawContent}</pre>
+                                <div style="margin:0.5rem 0;">
+                                    <button class="attj-btn download-mt103-btn" data-id="${msg.id}" style="background:#4caf50; padding:0.4rem 1rem; font-size:0.85rem; margin-right:0.5rem;">📄 Télécharger MT103</button>
+                                </div>
+                                
                                 <h4 style="color:#80dfff;">pacs.008 :</h4>
                                 <pre style="white-space:pre-wrap; background:#222; color:#8dd; padding:1rem; border-left:4px solid #2196f3;">${escapeHtml(msg.pacs008Xml)}</pre>
+                                <div style="margin:0.5rem 0;">
+                                    <button class="attj-btn download-xml-btn" data-id="${msg.id}" style="background:#2196f3; padding:0.4rem 1rem; font-size:0.85rem;">📥 Télécharger XML</button>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -165,6 +172,22 @@ historyToggle.addEventListener('click', function(e) {
                         this.textContent = isVisible ? 'Voir détails' : 'Masquer détails';
                     });
                 });
+
+                // Gestionnaires pour les boutons de téléchargement MT103
+                document.querySelectorAll('.download-mt103-btn').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const msgId = this.getAttribute('data-id');
+                        downloadFileFromHistory(msgId, 'mt103');
+                    });
+                });
+
+                // Gestionnaires pour les boutons de téléchargement XML
+                document.querySelectorAll('.download-xml-btn').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const msgId = this.getAttribute('data-id');
+                        downloadFileFromHistory(msgId, 'xml');
+                    });
+                });
             }
             historySection.style.display = 'block';
         })
@@ -173,7 +196,6 @@ historyToggle.addEventListener('click', function(e) {
             historySection.style.display = 'block';
         });
 });
-
 
 
 closeHistory.addEventListener('click', function() {
@@ -198,3 +220,37 @@ clearHistory.addEventListener('click', function() {
         });
     }
 });
+
+// Fonction pour télécharger les fichiers depuis l'historique
+function downloadFileFromHistory(msgId, fileType) {
+    const endpoint = `/api/history/${msgId}/download/${fileType}`;
+
+    fetch(endpoint)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+
+            // Définir le nom de fichier selon le type
+            if (fileType === 'mt103') {
+                a.download = `MT103_${msgId}.txt`;
+            } else if (fileType === 'xml') {
+                a.download = `pacs008_${msgId}.xml`;
+            }
+
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        })
+        .catch(error => {
+            console.error('Erreur lors du téléchargement:', error);
+            alert(`Erreur lors du téléchargement du fichier ${fileType.toUpperCase()}: ${error.message}`);
+        });
+}
