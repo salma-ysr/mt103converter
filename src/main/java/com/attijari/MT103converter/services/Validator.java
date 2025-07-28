@@ -3,6 +3,8 @@ package com.attijari.MT103converter.services;
 import com.attijari.MT103converter.models.MT103Msg;
 import com.attijari.MT103converter.models.ErrorCall;
 import org.springframework.stereotype.Service;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,6 +19,7 @@ import org.xml.sax.SAXException;
  */
 @Service
 public class Validator {
+    private static final Logger logger = LogManager.getLogger(Validator.class);
 
     /**
      * Valide un objet MT103Msg selon des règles métier.
@@ -25,30 +28,35 @@ public class Validator {
      * @return une liste d’erreurs potentielles
      */
     public ErrorCall validateMT103(MT103Msg msg){
+        logger.debug("Validating MT103Msg");
         ErrorCall errors = new ErrorCall();
 
         // Vérification du champ 20 (Reference Transaction)
         String value = msg.getField("20");
         if (value == null || value.trim().isEmpty()) {
             errors.addError("Erreur : Le champ Référence de transaction (:20) est manquant");
+            logger.warn("Missing tag :20 (Référence de transaction)");
         }
 
         // Vérification du champ 23B (Bank Operation Code)
         value = msg.getField("23B");
         if (value == null || value.trim().isEmpty()) {
             errors.addError("Erreur : Le champ Code opération bancaire (:23B) est manquant");
+            logger.warn("Missing tag :23B (Code opération bancaire)");
         }
 
         // Vérification du champ 32A (Value Date/Currency/Amount)
         value = msg.getField("32A");
         if (value == null || value.trim().isEmpty()) {
             errors.addError("Erreur : Le champ Date valeur/Devise/Montant (:32A) est manquant");
+            logger.warn("Missing tag :32A (Date valeur/Devise/Montant)");
         }
 
         // Vérification du champ 59 (Beneficiary)
         value = msg.getField("59");
         if (value == null || value.trim().isEmpty()) {
             errors.addError("Erreur : Le champ Bénéficiaire (:59) est manquant");
+            logger.warn("Missing tag :59 (Bénéficiaire)");
         }
 
         // Vérification du champ 71A (Charges)
@@ -66,6 +74,7 @@ public class Validator {
         // Validation additionnelle du format des champs si présents
         validateFieldFormats(msg, errors);
 
+        logger.info("Validation complete. Errors found: {}", errors.getErrors().size());
         return errors;
     }
 

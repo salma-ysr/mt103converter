@@ -3,6 +3,8 @@ package com.attijari.MT103converter.controllers;
 import com.attijari.MT103converter.converters.MT103ToPacs008Converter;
 import com.attijari.MT103converter.models.MT103Msg;
 import com.attijari.MT103converter.repositories.MT103MsgRepository;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +15,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api")
 public class MT103Controller {
+    private static final Logger logger = LogManager.getLogger(MT103Controller.class);
 
     private final MT103ToPacs008Converter converter;
     private final MT103MsgRepository repository;
@@ -26,11 +29,14 @@ public class MT103Controller {
 
     @PostMapping(value = "/convert", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ConversionResponse> convertMt103(@RequestBody String rawMt103) {
+        logger.info("Received MT103 file for conversion");
         MT103ToPacs008Converter.ConversionResult result = converter.process(rawMt103);
 
         if (result.isSuccess()) {
+            logger.info("MT103 conversion succeeded");
             return ResponseEntity.ok(new ConversionResponse(true, result.getXmlContent(), null));
         } else {
+            logger.error("MT103 conversion failed: {}", result.getErrorMessage());
             return ResponseEntity.badRequest()
                     .body(new ConversionResponse(false, null, result.getErrorMessage()));
         }

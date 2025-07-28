@@ -4,6 +4,9 @@ import com.attijari.MT103converter.models.MT103Msg;
 import com.attijari.MT103converter.models.Pacs008Msg;
 import org.springframework.stereotype.Service;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
@@ -19,6 +22,7 @@ import static org.apache.tomcat.util.http.FastHttpDateFormat.getCurrentDate;
  */
 @Service
 public class Transformer {
+    private static final Logger logger = LogManager.getLogger(Transformer.class);
 
     /**
      * Transforme MT103Msg en Pacs008Msg.
@@ -27,15 +31,18 @@ public class Transformer {
      * @return message transformé
      */
     public Pacs008Msg transform(MT103Msg mt103) {
+        logger.debug("Transforming MT103Msg to Pacs008Msg");
         if (mt103 == null) {
+            logger.error("MT103Msg is null, cannot transform");
             return null;
         }
-
         String xml = generatePacs008Xml(mt103);
+        logger.info("Transformation complete. XML length: {}", xml.length());
         return new Pacs008Msg(xml);
     }
 
     private String generatePacs008Xml(MT103Msg mt103) {
+        logger.trace("Generating PACS.008 XML from MT103Msg");
         StringBuilder xml = new StringBuilder();
 
         // En-tête XML
