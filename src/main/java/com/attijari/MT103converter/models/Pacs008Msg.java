@@ -27,11 +27,6 @@ public class Pacs008Msg {
                "</Document>";
     }
 
-    public boolean validateWithXSD(String xsdPath) {
-        // Todo
-        return true;
-    }
-
     public String getXmlContent() {
         return xmlContent;
     }

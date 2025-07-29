@@ -190,10 +190,12 @@ public class Transformer {
         xml.append("  </FIToFICstmrCdtTrf>\n");
         xml.append("</Document>");
 
-        //test
+        /*test
         System.out.println("---- XML GENERATED ----");
         System.out.println(xml.toString());
         System.out.println("-----------------------");
+
+         */
 
         return xml.toString();
     }
