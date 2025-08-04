@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MT103 Converter - Login</title>
+    <style>
+        body {
+            background: #181818;
+            color: #fff;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .attj-header {
+            background: linear-gradient(90deg, #ffb300 0%, #ff9800 60%, #181818 100%);
+            padding: 1.5rem 0;
+            text-align: center;
+        }
+
+        .attj-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .attj-logo-image {
+            height: 50px;
+            width: auto;
+        }
+
+        .attj-logo-text {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #181818;
+            letter-spacing: 1px;
+        }
+
+        main {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex: 1;
+            padding: 2rem 1rem;
+        }
+
+        .login-container {
+            background: #222;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+            padding: 3rem 2.5rem;
+            max-width: 450px;
+            width: 100%;
+            border: 1px solid #ff9800;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(45deg, #ffb300, #ff9800);
+            border-radius: 50%;
+            margin: 0 auto 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: #181818;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(255, 179, 0, 0.3);
+        }
+
+        h1 {
+            color: #ffb300;
+            margin-bottom: 0.5rem;
+            font-size: 1.8rem;
+        }
+
+        .subtitle {
+            color: #ccc;
+            margin-bottom: 2rem;
+            font-size: 1rem;
+        }
+
+        .oauth-button {
+            background: linear-gradient(90deg, #ffb300 0%, #ff9800 100%);
+            color: #181818;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            padding: 1.2rem 2rem;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin: 0 auto 1.5rem auto;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(255, 179, 0, 0.3);
+            min-height: 56px;
+            box-sizing: border-box;
+        }
+
+        .oauth-button:hover {
+            background: linear-gradient(90deg, #ff9800 0%, #ffb300 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 179, 0, 0.4);
+        }
+
+        .oauth-button:active {
+            transform: translateY(0);
+        }
+
+        .divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            position: relative;
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #444;
+        }
+
+        .divider span {
+            background: #222;
+            padding: 0 1rem;
+        }
+
+        .info-section {
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            border-left: 4px solid #ff9800;
+        }
+
+        .info-title {
+            color: #ffb300;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.8rem;
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+
+        .feature-icon {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(45deg, #ffb300, #ff9800);
+            border-radius: 50%;
+            margin-right: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #181818;
+            font-weight: bold;
+            font-size: 0.7rem;
+            flex-shrink: 0;
+        }
+
+        .error-message {
+            background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            text-align: center;
+            border: 1px solid #f44336;
+        }
+
+        .success-message {
+            background: linear-gradient(135deg, #388e3c 0%, #2e7d32 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            text-align: center;
+            border: 1px solid #4caf50;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                margin: 1rem;
+                padding: 2rem 1.5rem;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .attj-logo-text {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="attj-header">
+        <div class="attj-logo">
+            <img src="/LogoAttijari.png" alt="Attijari Logo" class="attj-logo-image">
+            <span class="attj-logo-text">MT103 Converter - Connexion</span>
+        </div>
+    </header>
+
+    <main>
+        <div class="login-container">
+            <div class="login-header">
+                <div class="login-icon">🔐</div>
+                <h1>Authentification</h1>
+                <p class="subtitle">Connectez-vous pour accéder à la plateforme de conversion</p>
+            </div>
+
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+            <div id="successMessage" class="success-message" style="display: none;"></div>
+
+            <div class="login-form">
+                <a href="/oauth2/authorization/keycloak" class="oauth-button">
+                    🔑 Se connecter avec Keycloak
+                </a>
+
+                <div class="divider">
+                    <span>Authentification sécurisée OAuth2</span>
+                </div>
+
+                <div class="info-section">
+                    <div class="info-title">🎯 Fonctionnalités de la plateforme :</div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon">⚡</div>
+                        <span>Conversion rapide MT103 vers PACS.008</span>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon">📊</div>
+                        <span>Historique complet des conversions</span>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon">🔒</div>
+                        <span>Sécurité renforcée avec Keycloak</span>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon">✅</div>
+                        <span>Validation automatique des formats</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Vérifier les paramètres URL pour afficher les messages
+        window.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const errorDiv = document.getElementById('errorMessage');
+            const successDiv = document.getElementById('successMessage');
+
+            if (urlParams.get('error') === 'true') {
+                errorDiv.textContent = '❌ Échec de l\'authentification. Veuillez réessayer.';
+                errorDiv.style.display = 'block';
+            }
+
+            if (urlParams.get('logout') === 'true') {
+                successDiv.textContent = '✅ Vous avez été déconnecté avec succès.';
+                successDiv.style.display = 'block';
+            }
+        });
+
+        // Animation au clic du bouton
+        document.querySelector('.oauth-button').addEventListener('click', function() {
+            this.style.transform = 'scale(0.98)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 100);
+        });
+    </script>
+</body>
+</html>

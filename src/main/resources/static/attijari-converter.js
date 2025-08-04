@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch('/api/convert', {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
+            credentials: 'include',  // Inclure les cookies de session
             body: mt103
         })
         .then(async response => {
@@ -119,7 +120,9 @@ const historyList = document.getElementById('historyList');
 
 historyToggle.addEventListener('click', function(e) {
     e.preventDefault();
-    fetch('/api/history')
+    fetch('/api/history', {
+        credentials: 'include'  // Inclure les cookies de session
+    })
         .then(res => res.json())
         .then(data => {
             historyList.innerHTML = '';
@@ -206,7 +209,8 @@ const clearHistory = document.getElementById('clearHistory');
 clearHistory.addEventListener('click', function() {
     if (confirm("Effacer l'historique?")) {
         fetch('/api/history', {
-            method: 'DELETE'
+            method: 'DELETE',
+            credentials: 'include'  // Inclure les cookies de session
         })
         .then(res => {
             if (res.ok) {
@@ -225,7 +229,9 @@ clearHistory.addEventListener('click', function() {
 function downloadFileFromHistory(msgId, fileType) {
     const endpoint = `/api/history/${msgId}/download/${fileType}`;
 
-    fetch(endpoint)
+    fetch(endpoint, {
+        credentials: 'include'  // Inclure les cookies de session
+    })
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Erreur ${response.status}: ${response.statusText}`);
@@ -253,4 +259,13 @@ function downloadFileFromHistory(msgId, fileType) {
             console.error('Erreur lors du téléchargement:', error);
             alert(`Erreur lors du téléchargement du fichier ${fileType.toUpperCase()}: ${error.message}`);
         });
+}
+
+// Fonction pour déconnexion OAuth2 complète (Spring + Keycloak)
+function logout() {
+    if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+        // Déconnexion complète avec Keycloak
+        // Spring Security gère automatiquement la déconnexion Keycloak avec RP-Initiated Logout
+        window.location.href = '/logout';
+    }
 }

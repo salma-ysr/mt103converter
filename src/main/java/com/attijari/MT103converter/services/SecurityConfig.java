@@ -31,18 +31,41 @@ public class SecurityConfig {
         try {
             http
                     .authorizeHttpRequests(authorize -> authorize
+                            .requestMatchers("/login", "/login.html", "/css/**", "/js/**", "/images/**", "/static/**", "/*.png", "/*.css", "/*.js", "/error").permitAll()
                             .requestMatchers("/public/**").permitAll()
                             .requestMatchers("/admin/**").hasRole("ADMIN")
                             .requestMatchers("/user/**").hasRole("USER")
+                            .requestMatchers("/", "/index.html", "/api/**").authenticated()  // Protéger la racine, index.html et l'API
                             .anyRequest().authenticated()
+                    )
+                    .csrf(csrf -> csrf
+                            .ignoringRequestMatchers("/api/**")  // Désactiver CSRF pour les API endpoints
+                    )
+                    .oauth2Login(oauth2 -> oauth2
+                            .loginPage("/login.html")
+                            .defaultSuccessUrl("/index.html", true)
+                            .failureUrl("/login.html?error=true")
                     )
                     .oauth2ResourceServer(oauth2 -> oauth2
                             .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                    )
+                    .logout(logout -> logout
+                            .logoutUrl("/logout")
+                            .logoutSuccessUrl("/login.html?logout=true")
+                            .invalidateHttpSession(true)
+                            .clearAuthentication(true)
+                            .deleteCookies("JSESSIONID")
+                    )
+                    .sessionManagement(session -> session
+                            .invalidSessionUrl("/login.html?expired=true")
+                            .maximumSessions(1)
+                            .maxSessionsPreventsLogin(false)
                     );
         } catch (Exception e) {
-            System.err.println("Erreur de chargement de Keycloak.");
+            System.err.println("Erreur de chargement de Keycloak. Mode développement activé.");
             http
-                    .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll());
+                    .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
+                    .csrf(csrf -> csrf.disable());
         }
 
         return http.build();
