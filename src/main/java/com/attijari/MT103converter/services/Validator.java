@@ -31,6 +31,25 @@ public class Validator {
         logger.debug("Validating MT103Msg");
         ErrorCall errors = new ErrorCall();
 
+        // Vérification de la structure globale du message MT103
+        String raw = msg.getRawContent();
+        if (raw == null || raw.isEmpty()) {
+            errors.addError("Erreur : Le contenu brut du message MT103 est vide ou manquant");
+        } else {
+            if (!raw.trim().startsWith("{") || !raw.trim().endsWith("}")) {
+                errors.addError("Erreur : Le message MT103 doit commencer par '{' et se terminer par '}'");
+            }
+            // Vérifier l'équilibre des accolades
+            int open = 0, close = 0;
+            for (char c : raw.toCharArray()) {
+                if (c == '{') open++;
+                if (c == '}') close++;
+            }
+            if (open != close) {
+                errors.addError("Erreur : Le nombre d'accolades ouvrantes et fermantes dans le message MT103 n'est pas équilibré");
+            }
+        }
+
         // Vérification du champ 20 (Reference Transaction)
         String value = msg.getField("20");
         if (value == null || value.trim().isEmpty()) {
