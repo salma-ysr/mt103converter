@@ -32,11 +32,33 @@ public class MT103Controller {
         logger.info("Received MT103 file for conversion");
         MT103ToPacs008Converter.ConversionResult result = converter.process(rawMt103);
 
+        // *** MODIFICATION : Sauvegarder TOUTES les conversions (succès ET erreurs) ***
+        try {
+            // Créer l'objet MT103Msg pour toutes les conversions
+            MT103Msg mt103Msg = result.getMt103Msg();
+
+            if (result.isSuccess()) {
+                // Pour les succès : sauvegarder avec le XML généré
+                mt103Msg.setPacs008Xml(result.getXmlContent());
+                logger.info("MT103 conversion succeeded - saving to database");
+            } else {
+                // Pour les erreurs : sauvegarder SANS XML (pacs008Xml = null)
+                mt103Msg.setPacs008Xml(null);  // Explicitement null pour indiquer l'erreur
+                logger.warn("MT103 conversion failed - saving error to database: {}", result.getErrorMessage());
+            }
+
+            // Sauvegarder dans tous les cas
+            repository.save(mt103Msg);
+            logger.info("Conversion saved to database with ID: {}", mt103Msg.getId());
+
+        } catch (Exception e) {
+            logger.error("Erreur lors de la sauvegarde en base: {}", e.getMessage(), e);
+        }
+
+        // Retourner la réponse selon le résultat
         if (result.isSuccess()) {
-            logger.info("MT103 conversion succeeded");
             return ResponseEntity.ok(new ConversionResponse(true, result.getXmlContent(), null));
         } else {
-            logger.error("MT103 conversion failed: {}", result.getErrorMessage());
             return ResponseEntity.badRequest()
                     .body(new ConversionResponse(false, null, result.getErrorMessage()));
         }

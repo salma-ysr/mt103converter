@@ -8,6 +8,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.xml.XMLConstants;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
@@ -25,7 +27,7 @@ public class Validator {
      * Valide un objet MT103Msg selon des règles métier.
      *
      * @param msg le message MT103 à valider
-     * @return une liste d’erreurs potentielles
+     * @return une liste d'erreurs potentielles
      */
     public ErrorCall validateMT103(MT103Msg msg){
         logger.debug("Validating MT103Msg");
@@ -39,15 +41,10 @@ public class Validator {
             if (!raw.trim().startsWith("{") || !raw.trim().endsWith("}")) {
                 errors.addError("Erreur : Le message MT103 doit commencer par '{' et se terminer par '}'");
             }
-            // Vérifier l'équilibre des accolades
-            int open = 0, close = 0;
-            for (char c : raw.toCharArray()) {
-                if (c == '{') open++;
-                if (c == '}') close++;
-            }
-            if (open != close) {
-                errors.addError("Erreur : Le nombre d'accolades ouvrantes et fermantes dans le message MT103 n'est pas équilibré");
-            }
+
+            // Nouvelle validation stricte de la structure des blocs MT103
+            ErrorCall structureErrors = validateMT103BlockStructure(raw.trim());
+            errors.addAllErrors(structureErrors.getErrors());
         }
 
         // Vérification du champ 20 (Reference Transaction)
@@ -364,5 +361,165 @@ public class Validator {
             .replaceAll("facet-valid", "format valide")
             .replaceAll("with respect to", "par rapport à")
             .trim();
+    }
+
+    /**
+     * Valide la structure des blocs dans un message MT103
+     * Vérifie que chaque bloc est correctement encadré par des accolades
+     * et que la structure générale est respectée
+     */
+    private ErrorCall validateMT103BlockStructure(String raw) {
+        ErrorCall errors = new ErrorCall();
+
+        // Supprimer les espaces et retours à la ligne pour une analyse plus précise
+        String cleanRaw = raw.replaceAll("\\s+", "");
+
+        // Vérifier que le message commence et se termine par des accolades
+        if (!cleanRaw.startsWith("{") || !cleanRaw.endsWith("}")) {
+            errors.addError("Erreur de structure : Le message MT103 doit commencer par '{' et se terminer par '}'");
+            return errors;
+        }
+
+        // Vérifier l'équilibre des accolades
+        int openCount = 0;
+        int closeCount = 0;
+        for (char c : cleanRaw.toCharArray()) {
+            if (c == '{') openCount++;
+            if (c == '}') closeCount++;
+        }
+        if (openCount != closeCount) {
+            errors.addError("Erreur de structure : Nombre d'accolades ouvrantes (" + openCount +
+                          ") et fermantes (" + closeCount + ") non équilibré");
+        }
+
+        // Extraire et valider les blocs principaux
+        List<String> blocks = extractMT103Blocks(cleanRaw);
+
+        if (blocks.isEmpty()) {
+            errors.addError("Erreur de structure : Aucun bloc MT103 valide détecté");
+            return errors;
+        }
+
+        // Vérifier la présence des blocs obligatoires (ignorer le bloc 5)
+        boolean hasBlock1 = false, hasBlock2 = false, hasBlock4 = false;
+
+        for (String block : blocks) {
+            if (block.startsWith("{1:")) hasBlock1 = true;
+            else if (block.startsWith("{2:")) hasBlock2 = true;
+            else if (block.startsWith("{4:")) hasBlock4 = true;
+            // Bloc 5 ignoré - pas obligatoire
+        }
+
+        if (!hasBlock1) errors.addError("Erreur de structure : Bloc {1: (Basic Header) manquant");
+        if (!hasBlock2) errors.addError("Erreur de structure : Bloc {2: (Application Header) manquant");
+        if (!hasBlock4) errors.addError("Erreur de structure : Bloc {4: (Text Block) manquant");
+        // Bloc {5: (Trailer) ignoré dans la validation
+
+        // Vérifier la structure interne du bloc 4 (le plus important)
+        if (hasBlock4) {
+            String block4 = getBlockContent(cleanRaw, "{4:");
+            if (block4 != null && !block4.isEmpty()) {
+                validateBlock4Structure(block4, errors);
+            }
+        }
+
+        return errors;
+    }
+
+    /**
+     * Extrait tous les blocs MT103 du message brut
+     */
+    private List<String> extractMT103Blocks(String cleanRaw) {
+        List<String> blocks = new ArrayList<>();
+        int index = 0;
+
+        while (index < cleanRaw.length()) {
+            int openBrace = cleanRaw.indexOf('{', index);
+            if (openBrace == -1) break;
+
+            // Trouver l'accolade fermante correspondante
+            int braceCount = 1;
+            int closeBrace = openBrace + 1;
+
+            while (closeBrace < cleanRaw.length() && braceCount > 0) {
+                char c = cleanRaw.charAt(closeBrace);
+                if (c == '{') braceCount++;
+                else if (c == '}') braceCount--;
+                closeBrace++;
+            }
+
+            if (braceCount == 0) {
+                String block = cleanRaw.substring(openBrace, closeBrace);
+                blocks.add(block);
+                index = closeBrace;
+            } else {
+                // Accolade fermante manquante
+                break;
+            }
+        }
+
+        return blocks;
+    }
+
+    /**
+     * Récupère le contenu d'un bloc spécifique
+     */
+    private String getBlockContent(String raw, String blockStart) {
+        int start = raw.indexOf(blockStart);
+        if (start == -1) return null;
+
+        int openBrace = start;
+        int braceCount = 1;
+        int index = start + 1;
+
+        while (index < raw.length() && braceCount > 0) {
+            char c = raw.charAt(index);
+            if (c == '{') braceCount++;
+            else if (c == '}') braceCount--;
+            index++;
+        }
+
+        if (braceCount == 0) {
+            return raw.substring(start, index);
+        }
+
+        return null;
+    }
+
+    /**
+     * Valide la structure interne du bloc 4 (Text Block)
+     */
+    private void validateBlock4Structure(String block4, ErrorCall errors) {
+        // Vérifier la présence des champs obligatoires
+        String[] requiredFields = {":20:", ":23B:", ":32A:", ":59:", ":71A:"};
+
+        for (String field : requiredFields) {
+            if (!block4.contains(field)) {
+                String fieldName = getFieldName(field);
+                errors.addError("Erreur dans le bloc {4: : Champ obligatoire " + field +
+                              " (" + fieldName + ") manquant");
+            }
+        }
+
+        // Vérifier qu'au moins un des champs :50A: ou :50K: est présent
+        if (!block4.contains(":50A:") && !block4.contains(":50K:")) {
+            errors.addError("Erreur dans le bloc {4: : Au moins un des champs :50A: ou :50K: (Donneur d'ordre) doit être présent");
+        }
+    }
+
+    /**
+     * Retourne le nom descriptif d'un champ MT103
+     */
+    private String getFieldName(String fieldTag) {
+        switch (fieldTag) {
+            case ":20:": return "Référence de transaction";
+            case ":23B:": return "Code opération bancaire";
+            case ":32A:": return "Date valeur/Devise/Montant";
+            case ":50A:": return "Donneur d'ordre (Option A)";
+            case ":50K:": return "Donneur d'ordre (Option K)";
+            case ":59:": return "Bénéficiaire";
+            case ":71A:": return "Répartition des frais";
+            default: return "Champ inconnu";
+        }
     }
 }

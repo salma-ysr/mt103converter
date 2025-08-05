@@ -5,25 +5,126 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attijari MT103 → pacs.008</title>
     <link rel="stylesheet" href="/style-attijari.css">
+    <style>
+        .sidebar {
+            background: #181818;
+            color: #fff;
+            width: 250px;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+        }
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .sidebar-logo {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+        }
+        .sidebar-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 0;
+        }
+        .sidebar-nav {
+            flex-grow: 1;
+        }
+        .nav-item {
+            margin: 1rem 0;
+        }
+        .nav-link {
+            color: #fff;
+            text-decoration: none;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .nav-icon {
+            font-size: 1.2rem;
+        }
+        .nav-link.active {
+            color: #ff9800;
+        }
+        .logout-section {
+            margin-top: auto;
+        }
+        .logout-btn {
+            background: #d45f3b;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 0.7rem 1rem;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+        }
+        .logout-btn:hover {
+            background: #b71c1c;
+        }
+        .main-content {
+            margin-left: 270px;
+            padding: 2rem;
+            flex-grow: 1;
+        }
+    </style>
 </head>
 <body>
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="/LogoAttijari.png" alt="Attijariwafa Bank" class="sidebar-logo">
+            <h3 class="sidebar-title">MT103 Converter</h3>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-item">
+                <a href="/dashboard" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    Dashboard
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/conversion" class="nav-link active">
+                    <span class="nav-icon">🔄</span>
+                    Conversion MT103
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/historique" class="nav-link">
+                    <span class="nav-icon">📋</span>
+                    Historique
+                </a>
+            </div>
+        </nav>
+        <div class="logout-section">
+            <button class="logout-btn" onclick="window.location.href='/logout'">
+                🚪 Déconnexion
+            </button>
+        </div>
+    </div>
+    <div class="main-content">
     <header class="attj-header">
         <div class="attj-logo">
             <img src="/LogoAttijari.png" alt="Attijari Logo" class="attj-logo-image">
             <span class="attj-logo-text">Attijari MT103 Converter</span>
         </div>
-        <div class="attj-user-section">
-            <button id="logoutBtn" class="attj-logout-btn" onclick="logout()">
-                🚪 Déconnexion
-            </button>
-        </div>
+
     </header>
     <main>
-
         <section class="attj-converter-card">
             <h1>Convertisseur MT103 &rarr; pacs.008</h1>
             <p class="attj-desc">Collez ou importez un message MT103 pour obtenir instantanément son équivalent pacs.008 (XML SEPA ISO20022).</p>
-
             <form id="convertForm">
                 <div class="attj-form-group">
                     <label for="mt103">Message MT103</label>
@@ -35,28 +136,14 @@
                 </div>
                 <div class="attj-form-actions" style="display:flex; justify-content:center; align-items:center; gap:1.5rem; flex-wrap:wrap;">
                     <button type="submit" class="attj-btn">Convertir</button>
-                    <a href="#" id="historyToggle" style="color:#ff9800; text-decoration:underline; font-weight:500;">Afficher l'historique</a>
+                    <a href="/historique" id="historyToggle" style="color:#ff9800; text-decoration:underline; font-weight:500;">Afficher l'historique</a>
                 </div>
             </form>
-
-            <div id="historySection" style="display:none; margin-top: 2rem;">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 1rem;">
-                    <h2 style="margin: 0;">Historique</h2>
-                    <div style="display:flex; gap:0.75rem;">
-                        <button id="closeHistory" class="attj-btn" style="padding:0.4rem 1.5rem;font-size:0.9rem;background:#d45f3b;">Fermer</button>
-                        <button id="clearHistory" class="attj-btn" style="padding:0.4rem 1.5rem;font-size:0.9rem;background:#d45f3b;">Effacer l'historique</button>
-                    </div>
-                </div>
-
-                <ul id="historyList" style="list-style:none; padding-left: 0; margin-top: 1.5rem;"></ul>
-            </div>
-
             <div id="resultSection" style="display:none;">
                 <h2>Résultat pacs.008 (XML)</h2>
                 <textarea id="xmlResult" rows="10" readonly></textarea>
                 <button id="downloadBtn" class="attj-btn">Télécharger XML</button>
             </div>
-
             <!-- Zone d'erreur dédiée -->
             <div id="errorSection" class="attj-error-section" style="display:none;">
                 <div class="error-header">
@@ -71,5 +158,6 @@
         <span>© 2025 Attijari MT103 Converter</span>
     </footer>
     <script src="/attijari-converter.js"></script>
+    </div>
 </body>
 </html>

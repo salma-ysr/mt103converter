@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard MT103 Converter - Attijariwafa Bank</title>
+    <link rel="stylesheet" href="/style-attijari.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Sidebar styles from index.html */
+        .sidebar {
+            background: #181818;
+            color: #fff;
+            width: 250px;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+        }
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .sidebar-logo {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+        }
+        .sidebar-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 0;
+        }
+        .sidebar-nav {
+            flex-grow: 1;
+        }
+        .nav-item {
+            margin: 1rem 0;
+        }
+        .nav-link {
+            color: #F4C204FF;
+            text-decoration: none;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .nav-icon {
+            font-size: 1.2rem;
+        }
+        .nav-link.active {
+            color: #ff9800;
+        }
+        .logout-section {
+            margin-top: auto;
+        }
+        .logout-btn {
+            background: #d45f3b;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 0.7rem 1rem;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+        }
+        .logout-btn:hover {
+            background: #b71c1c;
+        }
+        .main-content {
+            margin-left: 270px;
+            padding: 2rem;
+            flex-grow: 1;
+        }
+
+        /* Dashboard specific styles */
+        .dashboard-container {
+            padding: 2rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: #222;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 24px #0008;
+            border: 1px solid #ff9800;
+            transition: transform 0.3s ease;
+            text-align: center;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 32px rgba(255, 179, 0, 0.2);
+        }
+        .stat-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #ffb300;
+        }
+        .stat-number {
+            font-size: 2.8rem;
+            font-weight: bold;
+            color: #ffb300;
+            margin-bottom: 0.5rem;
+        }
+        .stat-label {
+            color: #fff200;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .stat-subtitle {
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+        .chart-card {
+            background: #222;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 24px #0008;
+            border: 1px solid #ff9800;
+            margin-bottom: 2rem;
+        }
+        .chart-title {
+            color: #ffb300;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="/LogoAttijari.png" alt="Attijariwafa Bank" class="sidebar-logo">
+            <h3 class="sidebar-title">MT103 Converter</h3>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-item">
+                <a href="/dashboard" class="nav-link active">
+                    <span class="nav-icon">📊</span>
+                    Dashboard
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/conversion" class="nav-link">
+                    <span class="nav-icon">🔄</span>
+                    Conversion MT103
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/historique" class="nav-link">
+                    <span class="nav-icon">📋</span>
+                    Historique
+                </a>
+            </div>
+        </nav>
+        <div class="logout-section">
+            <button class="logout-btn" onclick="window.location.href='/logout'">
+                🚪 Déconnexion
+            </button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <header class="attj-header">
+            <div class="attj-logo">
+                <img src="/LogoAttijari.png" alt="Attijari Logo" class="attj-logo-image">
+                <span class="attj-logo-text">MT103 Converter Dashboard</span>
+            </div>
+        </header>
+
+        <main>
+            <div class="dashboard-container">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📁</div>
+                        <div class="stat-number" id="totalConversions">-</div>
+                        <div class="stat-label">Total Conversions</div>
+                        <div class="stat-subtitle">Depuis le début</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📅</div>
+                        <div class="stat-number" id="todayConversions">-</div>
+                        <div class="stat-label">Conversions Aujourd'hui</div>
+                        <div class="stat-subtitle" id="lastUpdate">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-number" id="successRate">-</div>
+                        <div class="stat-label">Taux de Succès</div>
+                        <div class="stat-subtitle">7 derniers jours</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⚡</div>
+                        <div class="stat-number">24/7</div>
+                        <div class="stat-label">Disponibilité</div>
+                        <div class="stat-subtitle">Service actif</div>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-title">📈 Évolution des Conversions</div>
+                    <div class="chart-container">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="attj-footer">
+            <span>© 2025 Attijari MT103 Converter</span>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+        });
+
+        function loadDashboardData() {
+            fetch('/api/dashboard/stats')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('totalConversions').textContent = data.totalConversions || 0;
+                    document.getElementById('todayConversions').textContent = data.todayConversions || 0;
+                    document.getElementById('successRate').textContent = `${data.successRate || 0}%`;
+                    document.getElementById('lastUpdate').textContent = new Date().toLocaleString('fr-FR');
+                })
+                .catch(error => console.error('Erreur:', error));
+
+            loadChartData();
+        }
+
+        function loadChartData() {
+            fetch('/api/dashboard/chart-data')
+                .then(response => response.json())
+                .then(data => createChart(data))
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    createChart(generateMockData());
+                });
+        }
+
+        function createChart(data) {
+            const ctx = document.getElementById('timelineChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.date),
+                    datasets: [{
+                        label: 'Conversions réussies',
+                        data: data.map(d => d.success),
+                        borderColor: '#4caf50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        fill: true
+                    }, {
+                        label: 'Erreurs',
+                        data: data.map(d => d.errors),
+                        borderColor: '#f44336',
+                        backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#333'
+                            },
+                            ticks: {
+                                color: '#fff'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: '#333'
+                            },
+                            ticks: {
+                                color: '#fff'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#fff'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function generateMockData() {
+            const data = [];
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const success = Math.floor(Math.random() * 30) + 10;
+                const errors = Math.floor(Math.random() * 5);
+                data.push({
+                    date: date.toLocaleDateString('fr-FR'),
+                    success,
+                    errors
+                });
+            }
+            return data;
+        }
+
+        // Auto-refresh toutes les 5 minutes
+        setInterval(loadDashboardData, 5 * 60 * 1000);
+    </script>
+</body>
+</html>

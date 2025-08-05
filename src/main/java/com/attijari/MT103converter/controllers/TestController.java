@@ -10,14 +10,29 @@ public class TestController {
     @GetMapping("/")
     public String home(Authentication authentication) {
         if (authentication != null && authentication.isAuthenticated()) {
-            return "redirect:/index.html";
+            return "forward:/dashboard.html";
         } else {
-            return "redirect:/login.html";
+            return "forward:/login.html";
         }
     }
 
     @GetMapping("/login")
     public String loginRedirect() {
-        return "redirect:/login.html";
+        return "forward:/login.html";
+    }
+
+    @GetMapping("/dashboard")
+    public String dashboard() {
+        return "forward:/dashboard.html";
+    }
+
+    @GetMapping("/historique")
+    public String historique() {
+        return "forward:/historique.html";
+    }
+
+    @GetMapping("/conversion")
+    public String conversion() {
+        return "forward:/index.html";
     }
 }

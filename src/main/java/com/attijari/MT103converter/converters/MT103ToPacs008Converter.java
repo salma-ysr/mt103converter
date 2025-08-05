@@ -28,13 +28,11 @@ public class MT103ToPacs008Converter {
 
     public ConversionResult process(String rawMT103) {
         if (rawMT103 == null || rawMT103.isBlank()) {
-            return new ConversionResult(false, null, "Le message MT103 est vide.");
+            return new ConversionResult(false, null, "Le message MT103 est vide.", null);
         }
 
         //parser
         MT103Msg mt103 = parser.parse(rawMT103);
-
-
 
         //valider MT103
         ErrorCall mt103Errors = validator.validateMT103(mt103);
@@ -43,13 +41,14 @@ public class MT103ToPacs008Converter {
             for (String err : mt103Errors.getErrors()) {
                 errorMsg.append("• ").append(err).append("\n");
             }
-            return new ConversionResult(false, null, errorMsg.toString().trim());
+            // Retourner l'objet MT103 même en cas d'erreur pour pouvoir le sauvegarder
+            return new ConversionResult(false, null, errorMsg.toString().trim(), mt103);
         }
 
         // transformer
         Pacs008Msg pacs = transformer.transform(mt103);
         if (pacs == null || pacs.getXmlContent() == null) {
-            return new ConversionResult(false, null, "Erreur lors de la transformation du message MT103.");
+            return new ConversionResult(false, null, "Erreur lors de la transformation du message MT103.", mt103);
         }
 
         // générer XML
@@ -62,21 +61,14 @@ public class MT103ToPacs008Converter {
             for (String err : pacsErrors.getErrors()) {
                 errorMsg.append("• ").append(err).append("\n");
             }
-            if (mt103Errors.hasErrors()) {
-                return new ConversionResult(false, null, errorMsg.toString().trim());
-            }
-        }
-        // pas sauvegarder si erreurs
-        if (pacs == null || pacs.getXmlContent() == null) {
-            return new ConversionResult(false, null, "Erreur lors de la transformation du message MT103.");
+            return new ConversionResult(false, null, errorMsg.toString().trim(), mt103);
         }
 
-
+        // Succès : on ne sauvegarde plus ici car c'est fait dans le MT103Controller
         mt103.setPacs008Xml(xml);
-        repository.save(mt103);
 
-        //retourner XML final
-        return new ConversionResult(true, xml, null);
+        //retourner XML final avec l'objet MT103
+        return new ConversionResult(true, xml, null, mt103);
     }
 
     public List<MT103Msg> getAllMessages() {
@@ -88,11 +80,18 @@ public class MT103ToPacs008Converter {
         private boolean success;
         private String xmlContent;
         private String errorMessage;
+        private MT103Msg mt103Msg;  // Ajouter l'objet MT103Msg
 
-        public ConversionResult(boolean success, String xmlContent, String errorMessage) {
+        public ConversionResult(boolean success, String xmlContent, String errorMessage, MT103Msg mt103Msg) {
             this.success = success;
             this.xmlContent = xmlContent;
             this.errorMessage = errorMessage;
+            this.mt103Msg = mt103Msg;
+        }
+
+        // Constructeur de compatibilité (pour les anciens appels)
+        public ConversionResult(boolean success, String xmlContent, String errorMessage) {
+            this(success, xmlContent, errorMessage, null);
         }
 
         public boolean isSuccess() {
@@ -105,6 +104,10 @@ public class MT103ToPacs008Converter {
 
         public String getErrorMessage() {
             return errorMessage;
+        }
+
+        public MT103Msg getMt103Msg() {
+            return mt103Msg;
         }
     }
 

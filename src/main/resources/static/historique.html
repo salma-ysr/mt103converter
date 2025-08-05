@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historique des conversions - Attijari MT103 Converter</title>
+    <link rel="stylesheet" href="/style-attijari.css">
+    <style>
+        /* Sidebar styles like in index.html */
+        .sidebar {
+            background: #181818;
+            color: #fff;
+            width: 250px;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+        }
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .sidebar-logo {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+        }
+        .sidebar-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 0;
+        }
+        .sidebar-nav {
+            flex-grow: 1;
+        }
+        .nav-item {
+            margin: 1rem 0;
+        }
+        .nav-link {
+            color: #fff;
+            text-decoration: none;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .nav-icon {
+            font-size: 1.2rem;
+        }
+        .nav-link.active {
+            color: #ff9800;
+        }
+        .logout-section {
+            margin-top: auto;
+        }
+        .logout-btn {
+            background: #d45f3b;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 0.7rem 1rem;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+        }
+        .logout-btn:hover {
+            background: #b71c1c;
+        }
+        .main-content {
+            margin-left: 270px;
+            padding: 2rem;
+            flex-grow: 1;
+        }
+
+        /* Historique specific styles */
+        .attj-history-card {
+            background: #222;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px #0008;
+            padding: 2rem 2.5rem;
+            margin: 2rem auto;
+            border: 1px solid #ff9800;
+        }
+        .attj-history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .attj-history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+        .attj-history-table th, .attj-history-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+        .attj-history-table th {
+            background: #181818;
+            color: #ffb300;
+            font-weight: bold;
+        }
+        .attj-history-table tr:hover {
+            background: rgba(255, 179, 0, 0.1);
+        }
+        .attj-btn {
+            background: linear-gradient(90deg, #ffb300 0%, #ff9800 100%);
+            color: #181818;
+            border: none;
+            border-radius: 6px;
+            padding: 0.75rem 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .attj-btn:hover {
+            background: linear-gradient(90deg, #ff9800 0%, #ffb300 100%);
+            transform: translateY(-2px);
+        }
+        .attj-status-success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .attj-status-error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .attj-pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+        .attj-pagination button {
+            background: #333;
+            color: #fff;
+            border: 1px solid #ff9800;
+            border-radius: 4px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .attj-pagination button.active {
+            background: #ff9800;
+            color: #181818;
+        }
+        .attj-pagination button:hover {
+            background: #ff9800;
+            color: #181818;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="/LogoAttijari.png" alt="Attijariwafa Bank" class="sidebar-logo">
+            <h3 class="sidebar-title">MT103 Converter</h3>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-item">
+                <a href="/dashboard" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    Dashboard
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/conversion" class="nav-link">
+                    <span class="nav-icon">🔄</span>
+                    Conversion MT103
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/historique" class="nav-link active">
+                    <span class="nav-icon">📋</span>
+                    Historique
+                </a>
+            </div>
+        </nav>
+        <div class="logout-section">
+            <button class="logout-btn" onclick="window.location.href='/logout'">
+                🚪 Déconnexion
+            </button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <header class="attj-header">
+            <div class="attj-logo">
+                <img src="/LogoAttijari.png" alt="Attijari Logo" class="attj-logo-image">
+                <span class="attj-logo-text">Historique des Conversions</span>
+            </div>
+        </header>
+
+        <main>
+            <div class="attj-history-card">
+                <div class="attj-history-header">
+                    <h1>Historique des conversions MT103</h1>
+                    <button id="clearHistory" class="attj-btn">Effacer l'historique</button>
+                </div>
+
+                <div class="attj-history-stats">
+                    <div>Total conversions : <span id="totalConversions">-</span></div>
+                    <div>Dernière mise à jour : <span id="lastUpdate">-</span></div>
+                </div>
+
+                <div class="attj-history-table-container">
+                    <table class="attj-history-table">
+                        <thead>
+                            <tr>
+                                <th>Date Conversion</th>
+                                <th>Montant</th>
+                                <th>Statut</th>
+                                <th>File In (MT103)</th>
+                                <th>File Out (PACS008)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center;">Chargement...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="attj-pagination" id="pagination"></div>
+            </div>
+        </main>
+
+        <footer class="attj-footer">
+            <span>© 2025 Attijari MT103 Converter</span>
+        </footer>
+    </div>
+
+    <script>
+        let currentPage = 0;
+        const pageSize = 10;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadHistory();
+        });
+
+        function loadHistory(page = 0) {
+            fetch(`/api/historique/list?page=${page}&size=${pageSize}`)
+                .then(response => response.json())
+                .then(data => {
+                    renderHistory(data);
+                    updateStats(data);
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    showError('Erreur lors du chargement de l\'historique');
+                });
+        }
+
+        function renderHistory(data) {
+            const tbody = document.getElementById('historyTableBody');
+            if (!data.conversions || data.conversions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Aucune conversion trouvée</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.conversions.map(item => `
+                <tr>
+                    <td>${new Date(item.date).toLocaleString('fr-FR')}</td>
+                    <td><strong>${item.amount || 'N/A'}</strong></td>
+                    <td class="${item.success ? 'attj-status-success' : 'attj-status-error'}">
+                        ${item.success ? 'Succès' : 'Erreur'}
+                        ${item.errorMessage ? `<br><small>${item.errorMessage}</small>` : ''}
+                    </td>
+                    <td>
+                        <div>📄 ${item.fileInName}</div>
+                        <button class="attj-btn" style="font-size:0.8rem; padding:0.3rem 0.8rem; margin-top:0.5rem;"
+                                onclick="downloadFile('${item.id}', 'mt103', '${item.fileInName}')">
+                            📥 Télécharger MT103
+                        </button>
+                    </td>
+                    <td>
+                        ${item.success ? `
+                            <div>📄 ${item.fileOutName}</div>
+                            <button class="attj-btn" style="font-size:0.8rem; padding:0.3rem 0.8rem; margin-top:0.5rem;"
+                                    onclick="downloadFile('${item.id}', 'pacs008', '${item.fileOutName}')">
+                                📥 Télécharger PACS008
+                            </button>
+                        ` : '<span style="color:#666;">Pas de fichier de sortie (erreur)</span>'}
+                    </td>
+                    <td>
+                        <button class="attj-btn" style="background:#d45f3b;" onclick="deleteConversion('${item.id}')">
+                            🗑️ Supprimer
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            renderPagination(data.currentPage, data.totalPages);
+        }
+
+        function renderPagination(currentPage, totalPages) {
+            const pagination = document.getElementById('pagination');
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            for (let i = 0; i < totalPages; i++) {
+                html += `
+                    <button
+                        ${i === currentPage ? 'class="active"' : ''}
+                        onclick="loadHistory(${i})"
+                    >
+                        ${i + 1}
+                    </button>
+                `;
+            }
+            pagination.innerHTML = html;
+        }
+
+        function updateStats(data) {
+            document.getElementById('totalConversions').textContent = data.totalElements || 0;
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleString('fr-FR');
+        }
+
+        function deleteConversion(id) {
+            if (confirm('Voulez-vous vraiment supprimer cette conversion ?')) {
+                fetch(`/api/historique/delete?id=${id}`, { method: 'DELETE' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            loadHistory(currentPage);
+                        } else {
+                            showError('Erreur lors de la suppression');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erreur:', error);
+                        showError('Erreur lors de la suppression');
+                    });
+            }
+        }
+
+        document.getElementById('clearHistory').onclick = function() {
+            if (confirm('Voulez-vous vraiment effacer tout l\'historique ?')) {
+                fetch('/api/historique/clear', { method: 'DELETE' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            loadHistory(0);
+                        } else {
+                            showError('Erreur lors de l\'effacement de l\'historique');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erreur:', error);
+                        showError('Erreur lors de l\'effacement de l\'historique');
+                    });
+            }
+        };
+
+        function showError(message) {
+            alert(message);
+        }
+
+        // Fonction pour télécharger un fichier
+        function downloadFile(conversionId, fileType, fileName) {
+            fetch(`/api/historique/download?id=${conversionId}&type=${fileType}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erreur de téléchargement');
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    showError('Erreur lors du téléchargement du fichier');
+                });
+        }
+
+        // Auto-refresh toutes les 5 minutes
+        setInterval(() => loadHistory(currentPage), 5 * 60 * 1000);
+    </script>
+</body>
+</html>

@@ -14,6 +14,12 @@ public class ErrorCall {
         errors.add(error);
     }
 
+    public void addAllErrors(List<String> errorList) {
+        if (errorList != null) {
+            errors.addAll(errorList);
+        }
+    }
+
     public boolean hasErrors() {
         return !errors.isEmpty();
     }

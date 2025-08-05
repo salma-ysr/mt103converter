@@ -119,85 +119,9 @@ const historySection = document.getElementById('historySection');
 const historyList = document.getElementById('historyList');
 
 historyToggle.addEventListener('click', function(e) {
-    e.preventDefault();
-    fetch('/api/history', {
-        credentials: 'include'  // Inclure les cookies de session
-    })
-        .then(res => res.json())
-        .then(data => {
-            historyList.innerHTML = '';
-            if (data.length === 0) {
-                historyList.innerHTML = '<li>Historique vide.</li>';
-            } else {
-                data.reverse().forEach(msg => {
-                    const li = document.createElement('li');
-                    li.style.marginBottom = '1rem';
-
-                    const date = new Date(msg.createdAt);
-                    const options = {
-                        weekday: 'short', year: 'numeric', month: 'long', day: 'numeric',
-                        hour: '2-digit', minute: '2-digit'
-                    };
-                    const formattedDate = date.toLocaleString('fr-FR', options);
-
-                    li.innerHTML = `
-                        <div style="background:#333; padding:1rem; border-radius:6px; border:1px solid #ff9800;">
-                            <div style="color:#ff9800; font-size:0.9rem; margin-bottom:0.5rem;">${formattedDate}</div>
-                            <div style="font-size:0.95rem; margin-bottom:0.5rem; color:#fff;">
-                                ID: <strong>${extraireChamp(msg.rawContent, ':20:')}</strong> |
-                                Montant: <strong>${extraireChamp(msg.rawContent, ':32A:')}</strong>
-                            </div>
-                            <button class="attj-btn toggle-details-btn" type="button">Voir détails</button>
-                            <div class="entry-details" style="display:none; margin-top:1rem;">
-                                <h4 style="color:#fff200;">MT103 :</h4>
-                                <pre style="white-space:pre-wrap; background:#222; color:#ccc; padding:1rem; border-left:4px solid #ffb300;">${msg.rawContent}</pre>
-                                <div style="margin:0.5rem 0;">
-                                    <button class="attj-btn download-mt103-btn" data-id="${msg.id}" style="background:#4caf50; padding:0.4rem 1rem; font-size:0.85rem; margin-right:0.5rem;">📄 Télécharger MT103</button>
-                                </div>
-                                
-                                <h4 style="color:#80dfff;">pacs.008 :</h4>
-                                <pre style="white-space:pre-wrap; background:#222; color:#8dd; padding:1rem; border-left:4px solid #2196f3;">${escapeHtml(msg.pacs008Xml)}</pre>
-                                <div style="margin:0.5rem 0;">
-                                    <button class="attj-btn download-xml-btn" data-id="${msg.id}" style="background:#2196f3; padding:0.4rem 1rem; font-size:0.85rem;">📥 Télécharger XML</button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    historyList.appendChild(li);
-                });
-
-                // toggle détails
-                document.querySelectorAll('.toggle-details-btn').forEach(btn => {
-                    btn.addEventListener('click', function () {
-                        const details = this.nextElementSibling;
-                        const isVisible = details.style.display === 'block';
-                        details.style.display = isVisible ? 'none' : 'block';
-                        this.textContent = isVisible ? 'Voir détails' : 'Masquer détails';
-                    });
-                });
-
-                // Gestionnaires pour les boutons de téléchargement MT103
-                document.querySelectorAll('.download-mt103-btn').forEach(btn => {
-                    btn.addEventListener('click', function () {
-                        const msgId = this.getAttribute('data-id');
-                        downloadFileFromHistory(msgId, 'mt103');
-                    });
-                });
-
-                // Gestionnaires pour les boutons de téléchargement XML
-                document.querySelectorAll('.download-xml-btn').forEach(btn => {
-                    btn.addEventListener('click', function () {
-                        const msgId = this.getAttribute('data-id');
-                        downloadFileFromHistory(msgId, 'xml');
-                    });
-                });
-            }
-            historySection.style.display = 'block';
-        })
-        .catch(() => {
-            historyList.innerHTML = '<li>Erreur de chargement de l’historique.</li>';
-            historySection.style.display = 'block';
-        });
+    // Permettre la redirection naturelle vers /historique
+    // Suppression de e.preventDefault() pour permettre la navigation
+    window.location.href = '/historique';
 });
 
 
