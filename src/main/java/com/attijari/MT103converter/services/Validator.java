@@ -350,7 +350,7 @@ public class Validator {
     }
 
     private String truncateValue(String value) {
-        if (value == null) return "null";
+        if (value == null || value.trim().isEmpty()) return "[vide]";
         if (value.length() <= 50) return value;
         return value.substring(0, 47) + "...";
     }

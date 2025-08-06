@@ -114,23 +114,30 @@ public class Transformer {
         // Debtor (Field 50A/50K)
         xml.append("      <Dbtr>\n");
         String debtor = !mt103.getField("50A").isEmpty() ? mt103.getField("50A") : mt103.getField("50K");
-        xml.append("        <Nm>").append(extractName(debtor)).append("</Nm>\n");
+        String debtorName = extractName(debtor);
+        xml.append("        <Nm>").append(debtorName.isEmpty() ? "Unknown" : debtorName).append("</Nm>\n");
         if (hasAddress(debtor)) {
-            xml.append("        <PstlAdr>\n");
-            xml.append("          <AdrLine>").append(extractAddress(debtor)).append("</AdrLine>\n");
-            xml.append("        </PstlAdr>\n");
+            String address = extractAddress(debtor);
+            if (!address.isEmpty()) {
+                xml.append("        <PstlAdr>\n");
+                xml.append("          <AdrLine>").append(address).append("</AdrLine>\n");
+                xml.append("        </PstlAdr>\n");
+            }
         }
         xml.append("      </Dbtr>\n");
 
         // Debtor Account (si disponible dans 50A)
         if (!mt103.getField("50A").isEmpty() && hasAccount(mt103.getField("50A"))) {
-            xml.append("      <DbtrAcct>\n");
-            xml.append("        <Id>\n");
-            xml.append("          <Othr>\n");
-            xml.append("            <Id>").append(extractAccount(mt103.getField("50A"))).append("</Id>\n");
-            xml.append("          </Othr>\n");
-            xml.append("        </Id>\n");
-            xml.append("      </DbtrAcct>\n");
+            String account = extractAccount(mt103.getField("50A"));
+            if (!account.isEmpty()) {
+                xml.append("      <DbtrAcct>\n");
+                xml.append("        <Id>\n");
+                xml.append("          <Othr>\n");
+                xml.append("            <Id>").append(account).append("</Id>\n");
+                xml.append("          </Othr>\n");
+                xml.append("        </Id>\n");
+                xml.append("      </DbtrAcct>\n");
+            }
         }
 
         // Debtor Agent obligatoire
@@ -159,30 +166,37 @@ public class Transformer {
         // Creditor (Field 59)
         xml.append("      <Cdtr>\n");
         String creditor = mt103.getField("59");
-        xml.append("        <Nm>").append(extractName(creditor)).append("</Nm>\n");
+        String creditorName = extractName(creditor);
+        xml.append("        <Nm>").append(creditorName.isEmpty() ? "Unknown" : creditorName).append("</Nm>\n");
         if (hasAddress(creditor)) {
-            xml.append("        <PstlAdr>\n");
-            xml.append("          <AdrLine>").append(extractAddress(creditor)).append("</AdrLine>\n");
-            xml.append("        </PstlAdr>\n");
+            String address = extractAddress(creditor);
+            if (!address.isEmpty()) {
+                xml.append("        <PstlAdr>\n");
+                xml.append("          <AdrLine>").append(address).append("</AdrLine>\n");
+                xml.append("        </PstlAdr>\n");
+            }
         }
         xml.append("      </Cdtr>\n");
 
         // Creditor Account (si disponible dans 59)
         if (hasAccount(creditor)) {
-            xml.append("      <CdtrAcct>\n");
-            xml.append("        <Id>\n");
-            xml.append("          <Othr>\n");
-            xml.append("            <Id>").append(extractAccount(creditor)).append("</Id>\n");
-            xml.append("          </Othr>\n");
-            xml.append("        </Id>\n");
-            xml.append("      </CdtrAcct>\n");
+            String account = extractAccount(creditor);
+            if (!account.isEmpty()) {
+                xml.append("      <CdtrAcct>\n");
+                xml.append("        <Id>\n");
+                xml.append("          <Othr>\n");
+                xml.append("            <Id>").append(account).append("</Id>\n");
+                xml.append("          </Othr>\n");
+                xml.append("        </Id>\n");
+                xml.append("      </CdtrAcct>\n");
+            }
         }
 
         // Remittance Information (Field 70 si disponible)
         String remittanceInfo = mt103.getField("70");
-        if (!remittanceInfo.isEmpty()) {
+        if (remittanceInfo != null && !remittanceInfo.trim().isEmpty()) {
             xml.append("      <RmtInf>\n");
-            xml.append("        <Ustrd>").append(remittanceInfo).append("</Ustrd>\n");
+            xml.append("        <Ustrd>").append(escapeXml(remittanceInfo.trim())).append("</Ustrd>\n");
             xml.append("      </RmtInf>\n");
         }
 
@@ -190,12 +204,10 @@ public class Transformer {
         xml.append("  </FIToFICstmrCdtTrf>\n");
         xml.append("</Document>");
 
-        /*test
+        // Activer temporairement l'affichage du XML pour déboguer
         System.out.println("---- XML GENERATED ----");
         System.out.println(xml.toString());
         System.out.println("-----------------------");
-
-         */
 
         return xml.toString();
     }
@@ -312,6 +324,20 @@ public class Transformer {
 
     private String getCurrentDate() {
         return java.time.LocalDate.now().toString();
+    }
+
+    /**
+     * Échappe les caractères spéciaux XML pour éviter les erreurs de validation
+     */
+    private String escapeXml(String text) {
+        if (text == null || text.isEmpty()) {
+            return "";
+        }
+        return text.replace("&", "&amp;")
+                   .replace("<", "&lt;")
+                   .replace(">", "&gt;")
+                   .replace("\"", "&quot;")
+                   .replace("'", "&apos;");
     }
 
 }

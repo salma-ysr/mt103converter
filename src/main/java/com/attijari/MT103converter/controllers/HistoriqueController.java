@@ -3,6 +3,9 @@ package com.attijari.MT103converter.controllers;
 import com.attijari.MT103converter.repositories.MT103MsgRepository;
 import com.attijari.MT103converter.models.MT103Msg;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -17,7 +20,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
- * API Controller pour les données de l'historique
+ * API Controller pour les données de l'historique par utilisateur
  */
 @RestController
 public class HistoriqueController {
@@ -28,7 +31,7 @@ public class HistoriqueController {
     private MT103MsgRepository mt103Repository;
 
     /**
-     * API pour récupérer l'historique des conversions
+     * API pour récupérer l'historique des conversions de l'utilisateur connecté
      */
     @GetMapping("/api/historique/list")
     public Map<String, Object> getHistoriqueList(
@@ -36,42 +39,142 @@ public class HistoriqueController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "") String filter) {
 
-        logger.debug("Récupération de l'historique en temps réel - page: {}, size: {}, filter: {}", page, size, filter);
+        String currentUser = getCurrentUsername();
+        logger.debug("Récupération de l'historique pour l'utilisateur {} - page: {}, size: {}, filter: {}",
+                    currentUser, page, size, filter);
 
         Map<String, Object> response = new HashMap<>();
 
         try {
             if (mt103Repository != null) {
-                // Récupérer les vraies données depuis MongoDB
-                List<Map<String, Object>> realData = getRealHistoriqueData(page, size, filter);
-                long totalElements = mt103Repository.count();
+                // Récupérer les vraies données depuis MongoDB pour cet utilisateur
+                List<Map<String, Object>> realData = getRealHistoriqueData(currentUser, page, size, filter);
+                long totalElements = mt103Repository.countByUsername(currentUser);
                 int totalPages = (int) Math.ceil((double) totalElements / size);
 
                 response.put("conversions", realData);
                 response.put("totalPages", totalPages);
+                response.put("currentPage", page);
                 response.put("totalElements", totalElements);
+                response.put("currentUser", currentUser);
+
+                logger.info("Historique récupéré pour {}: {} éléments sur {} pages",
+                           currentUser, totalElements, totalPages);
             } else {
-                // Fallback vers données factices si pas de DB
-                List<Map<String, Object>> mockData = generateMockHistorique(page, size, filter);
+                // Données factices si pas de DB
+                List<Map<String, Object>> mockData = generateMockHistoriqueData(page, size);
                 response.put("conversions", mockData);
                 response.put("totalPages", 5);
-                response.put("totalElements", 47L);
+                response.put("currentPage", page);
+                response.put("totalElements", 50);
+                response.put("currentUser", currentUser);
             }
-
-            response.put("currentPage", page);
-            response.put("pageSize", size);
-
         } catch (Exception e) {
-            logger.error("Erreur lors de la récupération de l'historique: {}", e.getMessage());
-            // Fallback vers données factices en cas d'erreur
-            response.put("conversions", generateMockHistorique(page, size, filter));
-            response.put("totalPages", 5);
-            response.put("totalElements", 47L);
-            response.put("currentPage", page);
-            response.put("pageSize", size);
+            logger.error("Erreur lors de la récupération de l'historique pour {}: {}", currentUser, e.getMessage());
+            response.put("conversions", new ArrayList<>());
+            response.put("totalPages", 0);
+            response.put("currentPage", 0);
+            response.put("totalElements", 0);
+            response.put("error", "Erreur lors du chargement de l'historique");
         }
 
         return response;
+    }
+
+    /**
+     * Récupérer l'utilisateur connecté
+     */
+    private String getCurrentUsername() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                if (authentication.getPrincipal() instanceof OidcUser) {
+                    OidcUser oidcUser = (OidcUser) authentication.getPrincipal();
+                    return oidcUser.getPreferredUsername();
+                } else {
+                    return authentication.getName();
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Impossible de récupérer l'utilisateur connecté: {}", e.getMessage());
+        }
+        return "anonymous";
+    }
+
+    /**
+     * Récupérer les vraies données d'historique pour un utilisateur spécifique
+     */
+    private List<Map<String, Object>> getRealHistoriqueData(String username, int page, int size, String filter) {
+        List<Map<String, Object>> historique = new ArrayList<>();
+
+        try {
+            // Récupérer les dernières conversions pour cet utilisateur
+            List<MT103Msg> messages = mt103Repository.findTop50ByUsernameOrderByCreatedAtDesc(username);
+
+            // Appliquer le filtre si fourni
+            if (!filter.isEmpty()) {
+                messages = messages.stream()
+                    .filter(msg -> msg.getField("20").toLowerCase().contains(filter.toLowerCase()) ||
+                                  (msg.getField("50K") != null && msg.getField("50K").toLowerCase().contains(filter.toLowerCase())) ||
+                                  (msg.getField("59") != null && msg.getField("59").toLowerCase().contains(filter.toLowerCase())))
+                    .toList();
+            }
+
+            // Pagination
+            int start = page * size;
+            int end = Math.min(start + size, messages.size());
+
+            if (start < messages.size()) {
+                messages = messages.subList(start, end);
+            } else {
+                messages = new ArrayList<>();
+            }
+
+            // Convertir en format pour l'API
+            for (MT103Msg msg : messages) {
+                try {
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("id", msg.getId());
+
+                    // Protection contre les champs null
+                    item.put("transactionId", safeGetField(msg, "20"));
+                    item.put("amount", extractAmount(safeGetField(msg, "32A")));
+                    item.put("currency", extractCurrency(safeGetField(msg, "32A")));
+                    item.put("sender", extractFirstLine(safeGetField(msg, "50K")));
+                    item.put("beneficiary", extractFirstLine(safeGetField(msg, "59")));
+
+                    // Logique simplifiée et plus robuste pour déterminer le statut
+                    boolean isSuccess = msg.getPacs008Xml() != null &&
+                                      msg.getPacs008Xml().trim().length() > 50;
+
+                    item.put("status", isSuccess ? "Succès" : "Erreur");
+                    item.put("date", msg.getCreatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+                    item.put("username", msg.getUsername());
+
+                    // Ajouter le nom de fichier basé sur l'ID
+                    item.put("fileName", "MT103_" + msg.getId().substring(0, Math.min(8, msg.getId().length())) + ".txt");
+
+                    // Ajouter une taille de fichier estimée
+                    int fileSize = msg.getRawContent() != null ? msg.getRawContent().length() : 0;
+                    item.put("fileSize", formatFileSize(fileSize));
+
+                    // Ajout des fichiers MT103 in et Pacs008 out
+                    item.put("mt103InFile", msg.getRawContent());
+                    item.put("pacs008OutFile", msg.getPacs008Xml());
+
+                    historique.add(item);
+
+                } catch (Exception e) {
+                    logger.error("Erreur lors du traitement du message {}: {}", msg.getId(), e.getMessage());
+                    // Continuer avec le message suivant
+                }
+            }
+
+        } catch (Exception e) {
+            logger.error("Erreur lors de la récupération des données historiques pour {}: {}", username, e.getMessage());
+        }
+
+        return historique;
     }
 
     /**
@@ -133,7 +236,7 @@ public class HistoriqueController {
         return LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm"));
     }
 
-    private List<Map<String, Object>> generateMockHistorique(int page, int size, String filter) {
+    private List<Map<String, Object>> generateMockHistoriqueData(int page, int size) {
         List<Map<String, Object>> historique = new ArrayList<>();
         Random random = new Random();
 
@@ -149,10 +252,6 @@ public class HistoriqueController {
             boolean isSuccess = random.nextDouble() < 0.85; // 85% de succès
 
             // Filtrage simple
-            if (!filter.isEmpty() && !type.toLowerCase().contains(filter.toLowerCase())) {
-                continue;
-            }
-
             LocalDateTime date = LocalDateTime.now().minusDays(random.nextInt(30))
                     .minusHours(random.nextInt(24))
                     .minusMinutes(random.nextInt(60));
@@ -171,64 +270,6 @@ public class HistoriqueController {
             }
 
             historique.add(item);
-        }
-
-        return historique;
-    }
-
-    // === Nouvelle méthode pour récupérer les vraies données ===
-
-    private List<Map<String, Object>> getRealHistoriqueData(int page, int size, String filter) {
-        List<Map<String, Object>> historique = new ArrayList<>();
-
-        try {
-            // Récupérer les dernières conversions depuis MongoDB
-            List<MT103Msg> recentConversions = mt103Repository.findTop50ByOrderByCreatedAtDesc();
-
-            // Appliquer la pagination manuelle (pour simplifier)
-            int start = page * size;
-            int end = Math.min(start + size, recentConversions.size());
-
-            for (int i = start; i < end; i++) {
-                if (i >= recentConversions.size()) break;
-
-                MT103Msg conversion = recentConversions.get(i);
-                Map<String, Object> item = new HashMap<>();
-
-                // Déterminer le succès basé sur la présence du XML
-                boolean isSuccess = conversion.getPacs008Xml() != null && !conversion.getPacs008Xml().trim().isEmpty();
-
-                // Extraire le montant du champ 32A (format: YYMMDDCCCNNNNN)
-                String amount = extractAmountFromMT103(conversion);
-
-                // Filtrage par statut
-                String status = isSuccess ? "Succès" : "Erreur";
-                if (!filter.isEmpty() && !status.toLowerCase().contains(filter.toLowerCase())) {
-                    continue;
-                }
-
-                // Générer les noms de fichiers
-                String fileInName = "MT103_" + conversion.getId().substring(0, 8) + ".txt";
-                String fileOutName = "PACS008_" + conversion.getId().substring(0, 8) + ".xml";
-
-                item.put("id", conversion.getId());
-                item.put("date", conversion.getCreatedAt().toString()); // Format ISO
-                item.put("amount", amount);
-                item.put("success", isSuccess);
-                item.put("status", status);
-                item.put("fileInName", fileInName);
-                item.put("fileOutName", fileOutName);
-
-                if (!isSuccess) {
-                    item.put("errorMessage", "Erreur de validation MT103");
-                }
-
-                historique.add(item);
-            }
-
-        } catch (Exception e) {
-            logger.error("Erreur lors de la récupération des vraies données: {}", e.getMessage());
-            throw e; // Re-lancer pour le fallback
         }
 
         return historique;
@@ -312,5 +353,57 @@ public class HistoriqueController {
             logger.error("Erreur lors du téléchargement: {}", e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    // === Méthodes utilitaires pour l'extraction des données ===
+
+    private String extractAmount(String field32A) {
+        if (field32A == null || field32A.isEmpty()) return "0.00";
+        try {
+            // Format 32A: YYMMDDCCCNNNNN
+            String amountStr = field32A.length() > 9 ? field32A.substring(9) : "0.00";
+            amountStr = amountStr.replace(",", ".");
+            double amount = Double.parseDouble(amountStr);
+            return String.format("%.2f", amount);
+        } catch (Exception e) {
+            return "0.00";
+        }
+    }
+
+    private String extractCurrency(String field32A) {
+        if (field32A == null || field32A.isEmpty()) return "EUR";
+        try {
+            return field32A.length() > 9 ? field32A.substring(6, 9) : "EUR";
+        } catch (Exception e) {
+            return "EUR";
+        }
+    }
+
+    private String extractFirstLine(String field) {
+        if (field == null || field.isEmpty()) return "";
+        String[] lines = field.split("\n");
+        return lines.length > 0 ? lines[0].trim() : "";
+    }
+
+    private String safeGetField(MT103Msg msg, String fieldName) {
+        try {
+            String value = msg.getField(fieldName);
+            return value != null ? value : "";
+        } catch (Exception e) {
+            logger.warn("Erreur lors de l'accès au champ {}: {}", fieldName, e.getMessage());
+            return "";
+        }
+    }
+
+    private String formatFileSize(int sizeInBytes) {
+        if (sizeInBytes <= 0) return "0 Ko";
+        String[] units = {"Ko", "Mo", "Go", "To"};
+        int i = 0;
+        double size = sizeInBytes;
+        while (size >= 1024 && i < units.length - 1) {
+            size /= 1024;
+            i++;
+        }
+        return String.format("%.1f %s", size, units[i]);
     }
 }

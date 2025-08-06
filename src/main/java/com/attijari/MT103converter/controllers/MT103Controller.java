@@ -8,6 +8,9 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
@@ -20,39 +23,72 @@ public class MT103Controller {
     private final MT103ToPacs008Converter converter;
     private final MT103MsgRepository repository;
 
-
     public MT103Controller(MT103ToPacs008Converter converter, MT103MsgRepository repository) {
         this.converter = converter;
         this.repository = repository;
     }
 
+    /**
+     * Récupérer l'utilisateur connecté
+     */
+    private String getCurrentUsername() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                if (authentication.getPrincipal() instanceof OidcUser) {
+                    OidcUser oidcUser = (OidcUser) authentication.getPrincipal();
+                    return oidcUser.getPreferredUsername();
+                } else {
+                    return authentication.getName();
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Impossible de récupérer l'utilisateur connecté: {}", e.getMessage());
+        }
+        return "anonymous";
+    }
 
     @PostMapping(value = "/convert", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ConversionResponse> convertMt103(@RequestBody String rawMt103) {
-        logger.info("Received MT103 file for conversion");
+        String currentUser = getCurrentUsername();
+        logger.info("Received MT103 file for conversion from user: {}", currentUser);
+
         MT103ToPacs008Converter.ConversionResult result = converter.process(rawMt103);
 
-        // *** MODIFICATION : Sauvegarder TOUTES les conversions (succès ET erreurs) ***
+        // *** MODIFICATION : Sauvegarder TOUTES les conversions avec le nom d'utilisateur ***
         try {
             // Créer l'objet MT103Msg pour toutes les conversions
             MT103Msg mt103Msg = result.getMt103Msg();
 
+            // **IMPORTANT : Enregistrer le nom d'utilisateur**
+            mt103Msg.setUsername(currentUser);
+
             if (result.isSuccess()) {
                 // Pour les succès : sauvegarder avec le XML généré
                 mt103Msg.setPacs008Xml(result.getXmlContent());
-                logger.info("MT103 conversion succeeded - saving to database");
+                logger.info("MT103 conversion succeeded for user {} - XML length: {} - saving to database",
+                           currentUser, result.getXmlContent() != null ? result.getXmlContent().length() : 0);
+
+                // Log détaillé pour déboguer
+                logger.debug("XML content preview: {}",
+                           result.getXmlContent() != null ? result.getXmlContent().substring(0, Math.min(100, result.getXmlContent().length())) : "NULL");
             } else {
                 // Pour les erreurs : sauvegarder SANS XML (pacs008Xml = null)
                 mt103Msg.setPacs008Xml(null);  // Explicitement null pour indiquer l'erreur
-                logger.warn("MT103 conversion failed - saving error to database: {}", result.getErrorMessage());
+                logger.warn("MT103 conversion failed for user {} - saving error to database: {}", currentUser, result.getErrorMessage());
             }
 
             // Sauvegarder dans tous les cas
             repository.save(mt103Msg);
-            logger.info("Conversion saved to database with ID: {}", mt103Msg.getId());
+
+            // Log détaillé après sauvegarde
+            logger.info("Conversion saved to database with ID: {} for user: {} - XML present: {} - XML length: {}",
+                       mt103Msg.getId(), currentUser,
+                       mt103Msg.getPacs008Xml() != null,
+                       mt103Msg.getPacs008Xml() != null ? mt103Msg.getPacs008Xml().length() : 0);
 
         } catch (Exception e) {
-            logger.error("Erreur lors de la sauvegarde en base: {}", e.getMessage(), e);
+            logger.error("Erreur lors de la sauvegarde en base pour l'utilisateur {}: {}", currentUser, e.getMessage(), e);
         }
 
         // Retourner la réponse selon le résultat

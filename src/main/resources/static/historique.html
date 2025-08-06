@@ -275,24 +275,23 @@
 
             tbody.innerHTML = data.conversions.map(item => `
                 <tr>
-                    <td>${new Date(item.date).toLocaleString('fr-FR')}</td>
-                    <td><strong>${item.amount || 'N/A'}</strong></td>
-                    <td class="${item.success ? 'attj-status-success' : 'attj-status-error'}">
-                        ${item.success ? 'Succès' : 'Erreur'}
-                        ${item.errorMessage ? `<br><small>${item.errorMessage}</small>` : ''}
+                    <td>${item.date}</td>
+                    <td><strong>${item.amount || 'N/A'} ${item.currency || ''}</strong></td>
+                    <td class="${item.status === 'Succès' ? 'attj-status-success' : 'attj-status-error'}">
+                        ${item.status}
                     </td>
                     <td>
-                        <div>📄 ${item.fileInName}</div>
+                        <div>📄 ${item.fileName}</div>
                         <button class="attj-btn" style="font-size:0.8rem; padding:0.3rem 0.8rem; margin-top:0.5rem;"
-                                onclick="downloadFile('${item.id}', 'mt103', '${item.fileInName}')">
+                                onclick="downloadFile('${item.id}', 'mt103', '${item.fileName}')">
                             📥 Télécharger MT103
                         </button>
                     </td>
                     <td>
-                        ${item.success ? `
-                            <div>📄 ${item.fileOutName}</div>
+                        ${item.status === 'Succès' ? `
+                            <div>📄 PACS008_${item.id.substring(0, 8)}.xml</div>
                             <button class="attj-btn" style="font-size:0.8rem; padding:0.3rem 0.8rem; margin-top:0.5rem;"
-                                    onclick="downloadFile('${item.id}', 'pacs008', '${item.fileOutName}')">
+                                    onclick="downloadFile('${item.id}', 'pacs008', 'PACS008_${item.id.substring(0, 8)}.xml')">
                                 📥 Télécharger PACS008
                             </button>
                         ` : '<span style="color:#666;">Pas de fichier de sortie (erreur)</span>'}

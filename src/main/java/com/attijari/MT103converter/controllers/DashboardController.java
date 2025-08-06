@@ -2,6 +2,9 @@ package com.attijari.MT103converter.controllers;
 
 import com.attijari.MT103converter.repositories.MT103MsgRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.apache.logging.log4j.LogManager;
@@ -22,65 +25,90 @@ public class DashboardController {
     private MT103MsgRepository mt103Repository;
 
     /**
-     * API pour récupérer les statistiques du dashboard
+     * API pour récupérer les statistiques du dashboard par utilisateur
      */
     @GetMapping("/api/dashboard/stats")
     public Map<String, Object> getDashboardStats() {
+        String currentUser = getCurrentUsername();
         Map<String, Object> stats = new HashMap<>();
-        stats.put("totalConversions", getTotalConversions());
-        stats.put("successRate", getSuccessRate());
-        stats.put("todayConversions", getTodayConversions());
+        stats.put("totalConversions", getTotalConversions(currentUser));
+        stats.put("successRate", getSuccessRate(currentUser));
+        stats.put("todayConversions", getTodayConversions(currentUser));
         stats.put("lastUpdate", getCurrentDateTime());
+        stats.put("currentUser", currentUser);
         return stats;
     }
 
     /**
-     * API pour les données des graphiques
+     * API pour les données des graphiques par utilisateur
      */
     @GetMapping("/api/dashboard/chart-data")
     public List<Map<String, Object>> getChartData() {
-        logger.debug("Récupération des données de graphiques en temps réel");
-        return getRealTimelineData();
+        String currentUser = getCurrentUsername();
+        logger.debug("Récupération des données de graphiques pour l'utilisateur: {}", currentUser);
+        return getRealTimelineData(currentUser);
     }
 
-    // === Méthodes utilitaires pour les statistiques RÉELLES ===
+    // === Méthodes pour récupérer l'utilisateur connecté ===
 
-    private long getTotalConversions() {
+    private String getCurrentUsername() {
         try {
-            return mt103Repository != null ? mt103Repository.count() : 0;
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                if (authentication.getPrincipal() instanceof OidcUser) {
+                    OidcUser oidcUser = (OidcUser) authentication.getPrincipal();
+                    return oidcUser.getPreferredUsername();
+                } else {
+                    return authentication.getName();
+                }
+            }
         } catch (Exception e) {
-            logger.warn("Impossible de récupérer le nombre total de conversions: {}", e.getMessage());
+            logger.warn("Impossible de récupérer l'utilisateur connecté: {}", e.getMessage());
+        }
+        return "anonymous";
+    }
+
+    // === Méthodes utilitaires pour les statistiques FILTRÉES PAR UTILISATEUR ===
+
+    private long getTotalConversions(String username) {
+        try {
+            return mt103Repository != null ? mt103Repository.countByUsername(username) : 0;
+        } catch (Exception e) {
+            logger.warn("Impossible de récupérer le nombre total de conversions pour {}: {}", username, e.getMessage());
             return 0;
         }
     }
 
-    private double getSuccessRate() {
+    private double getSuccessRate(String username) {
         try {
             if (mt103Repository == null) return 0.0;
 
-            long total = mt103Repository.count();
+            long total = mt103Repository.countByUsername(username);
             if (total == 0) return 0.0;
 
-            // Compter les conversions réussies (celles qui ont un XML généré)
-            long successful = mt103Repository.countByPacs008XmlIsNotNull();
+            // Compter les conversions réussies pour cet utilisateur (pacs008Xml != null && length > 50)
+            List<com.attijari.MT103converter.models.MT103Msg> messages = mt103Repository.findTop50ByUsernameOrderByCreatedAtDesc(username);
+            long successful = messages.stream()
+                .filter(msg -> msg.getPacs008Xml() != null && msg.getPacs008Xml().trim().length() > 50)
+                .count();
 
             return (double) successful / total * 100.0;
         } catch (Exception e) {
-            logger.warn("Impossible de calculer le taux de succès: {}", e.getMessage());
+            logger.warn("Impossible de calculer le taux de succès pour {}: {}", username, e.getMessage());
             return 0.0;
         }
     }
 
-    private long getTodayConversions() {
+    private long getTodayConversions(String username) {
         try {
             if (mt103Repository == null) return 0;
 
             LocalDateTime startOfDay = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
             LocalDateTime endOfDay = startOfDay.plusDays(1);
 
-            return mt103Repository.countByCreatedAtBetween(startOfDay, endOfDay);
+            return mt103Repository.countByUsernameAndCreatedAtBetween(username, startOfDay, endOfDay);
         } catch (Exception e) {
-            logger.warn("Impossible de récupérer les conversions du jour: {}", e.getMessage());
+            logger.warn("Impossible de récupérer les conversions du jour pour {}: {}", username, e.getMessage());
             return 0;
         }
     }
@@ -89,7 +117,7 @@ public class DashboardController {
         return LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm"));
     }
 
-    private List<Map<String, Object>> getRealTimelineData() {
+    private List<Map<String, Object>> getRealTimelineData(String username) {
         List<Map<String, Object>> timeline = new ArrayList<>();
 
         try {
@@ -107,10 +135,13 @@ public class DashboardController {
                 Map<String, Object> dayData = new HashMap<>();
 
                 // Total des conversions ce jour-là
-                long totalConversions = mt103Repository.countByCreatedAtBetween(startOfDay, endOfDay);
+                long totalConversions = mt103Repository.countByUsernameAndCreatedAtBetween(username, startOfDay, endOfDay);
 
-                // Conversions réussies (avec XML généré et non vide)
-                long successfulConversions = mt103Repository.countByCreatedAtBetweenAndPacs008XmlIsNotNull(startOfDay, endOfDay);
+                // Conversions réussies avec la même logique que l'historique (pacs008Xml != null && length > 50)
+                List<com.attijari.MT103converter.models.MT103Msg> dayMessages = mt103Repository.findByUsernameAndCreatedAtBetweenOrderByCreatedAtDesc(username, startOfDay, endOfDay);
+                long successfulConversions = dayMessages.stream()
+                    .filter(msg -> msg.getPacs008Xml() != null && msg.getPacs008Xml().trim().length() > 50)
+                    .count();
 
                 // Conversions en erreur
                 long errorConversions = totalConversions - successfulConversions;

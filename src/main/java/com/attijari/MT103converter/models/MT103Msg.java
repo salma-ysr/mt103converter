@@ -18,6 +18,8 @@ public class MT103Msg {
     @Field("pacs008Xml")
     private String pacs008Xml;
 
+    // Champ pour stocker l'utilisateur qui a créé cette conversion
+    private String username;
 
     public String getPacs008Xml() {
         return pacs008Xml;
@@ -26,7 +28,6 @@ public class MT103Msg {
     public void setPacs008Xml(String pacs008Xml) {
         this.pacs008Xml = pacs008Xml;
     }
-
 
     public MT103Msg() {
         //bare constructor
@@ -45,6 +46,9 @@ public class MT103Msg {
         /*
         extract and return fields from MT103 message
          */
+        if (fields == null) {
+            return "";
+        }
         String orDefault = fields.getOrDefault(tag, "");
         return orDefault;
     }
@@ -84,5 +88,13 @@ public class MT103Msg {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 }

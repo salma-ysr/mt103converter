@@ -22,4 +22,12 @@ public interface MT103MsgRepository extends MongoRepository<MT103Msg, String> {
 
     // Récupérer les dernières conversions pour l'historique (avec pagination)
     List<MT103Msg> findTop50ByOrderByCreatedAtDesc();
+
+    // Nouvelles méthodes pour le filtrage par utilisateur
+    long countByUsername(String username);
+    long countByUsernameAndPacs008XmlIsNotNull(String username);
+    long countByUsernameAndCreatedAtBetween(String username, LocalDateTime start, LocalDateTime end);
+    long countByUsernameAndCreatedAtBetweenAndPacs008XmlIsNotNull(String username, LocalDateTime start, LocalDateTime end);
+    List<MT103Msg> findByUsernameAndCreatedAtBetweenOrderByCreatedAtDesc(String username, LocalDateTime start, LocalDateTime end);
+    List<MT103Msg> findTop50ByUsernameOrderByCreatedAtDesc(String username);
 }
