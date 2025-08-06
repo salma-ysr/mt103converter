@@ -21,6 +21,9 @@ public class LogoutController {
     @Value("${spring.security.oauth2.client.provider.keycloak.issuer-uri:http://localhost:8080/realms/Mt103-Converter}")
     private String keycloakIssuerUri;
 
+    @Value("${app.base-url:http://localhost:8081}")
+    private String appBaseUrl;
+
     @GetMapping("/logout")
     public void logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
 
@@ -39,8 +42,8 @@ public class LogoutController {
         logoutHandler.setClearAuthentication(true);
         logoutHandler.logout(request, response, authentication);
 
-        // 4. URL de redirection après déconnexion Keycloak (sans paramètres)
-        String redirectUri = "http://localhost:8081/login.html";
+        // 4. URL de redirection après déconnexion Keycloak
+        String redirectUri = appBaseUrl + "/login.html?logout=true";
         String encodedRedirectUri = URLEncoder.encode(redirectUri, StandardCharsets.UTF_8);
 
         // 5. Si l'utilisateur est connecté via OIDC, déconnexion complète Keycloak
@@ -56,7 +59,7 @@ public class LogoutController {
             response.sendRedirect(logoutUrl);
         } else {
             // Déconnexion simple - redirection directe
-            response.sendRedirect("/login.html");
+            response.sendRedirect(redirectUri);
         }
     }
 }

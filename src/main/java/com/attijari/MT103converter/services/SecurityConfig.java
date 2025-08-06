@@ -35,7 +35,7 @@ public class SecurityConfig {
                             .requestMatchers("/public/**").permitAll()
                             .requestMatchers("/admin/**").hasRole("ADMIN")
                             .requestMatchers("/user/**").hasRole("USER")
-                            .requestMatchers("/", "/index.html", "/api/**").authenticated()  // Protéger la racine, index.html et l'API
+                            .requestMatchers("/", "/index.html", "/dashboard", "/historique", "/conversion", "/api/**").authenticated()  // Ajouter conversion aux routes protégées
                             .anyRequest().authenticated()
                     )
                     .csrf(csrf -> csrf
@@ -43,11 +43,8 @@ public class SecurityConfig {
                     )
                     .oauth2Login(oauth2 -> oauth2
                             .loginPage("/login.html")
-                            .defaultSuccessUrl("/index.html", true)
+                            .defaultSuccessUrl("/dashboard", true)
                             .failureUrl("/login.html?error=true")
-                    )
-                    .oauth2ResourceServer(oauth2 -> oauth2
-                            .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                     )
                     .logout(logout -> logout
                             .logoutUrl("/logout")
@@ -55,6 +52,10 @@ public class SecurityConfig {
                             .invalidateHttpSession(true)
                             .clearAuthentication(true)
                             .deleteCookies("JSESSIONID")
+                            .permitAll()
+                    )
+                    .oauth2ResourceServer(oauth2 -> oauth2
+                            .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                     )
                     .sessionManagement(session -> session
                             .invalidSessionUrl("/login.html?expired=true")

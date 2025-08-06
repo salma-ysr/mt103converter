@@ -274,7 +274,17 @@ public class Transformer {
             if (i > 1) address.append(" ");
             address.append(lines[i].trim());
         }
-        return address.toString();
+
+        String fullAddress = address.toString();
+
+        // Limiter à 35 caractères selon les spécifications PACS.008
+        if (fullAddress.length() > 35) {
+            logger.warn("Adresse tronquée de {} à 35 caractères: '{}'",
+                       fullAddress.length(), fullAddress);
+            return fullAddress.substring(0, 35);
+        }
+
+        return fullAddress;
     }
 
     private boolean hasAddress(String field) {
