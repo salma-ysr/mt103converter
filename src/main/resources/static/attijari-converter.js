@@ -605,15 +605,15 @@ function displayResults(data) {
                 </div>
                 <p>Votre fichier MT103 a été converti avec succès au format PACS008.</p>
                 <div class="download-section">
-                    <button class="attj-btn" onclick="downloadFile('${data.xmlFileName}', 'xml')">
+                    <button class="attj-btn" onclick="downloadXmlContent()">
                         📁 Télécharger XML
-                    </button>
-                    <button class="attj-btn" onclick="downloadFile('${data.jsonFileName}', 'json')">
-                        📋 Télécharger JSON
                     </button>
                 </div>
             </div>
         `;
+
+        // Stocker le contenu XML pour le téléchargement
+        window.lastConvertedXml = data.xmlContent;
     } else {
         resultContent.innerHTML = `
             <div class="result-error">
@@ -621,8 +621,7 @@ function displayResults(data) {
                     <span>❌</span>
                     Erreur de conversion
                 </div>
-                <p>${escapeHtml(data.error || 'Une erreur inattendue s\'est produite')}</p>
-                ${data.details ? `<pre style="margin-top: 1rem; padding: 1rem; background: rgba(0,0,0,0.3); border-radius: 4px; white-space: pre-wrap;">${escapeHtml(data.details)}</pre>` : ''}
+                <p>${escapeHtml(data.errorMessage || 'Une erreur inattendue s\'est produite')}</p>
             </div>
         `;
     }
@@ -670,4 +669,30 @@ function showSuccess(message) {
             document.body.removeChild(successDiv);
         }
     }, 3000);
+}
+
+// Fonction de téléchargement XML
+function downloadXmlContent() {
+    const xmlContent = window.lastConvertedXml;
+
+    if (!xmlContent) {
+        showError('Aucun contenu XML disponible');
+        return;
+    }
+
+    const blob = new Blob([xmlContent], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'converted_file.xml';
+    link.style.display = 'none';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+
+    showSuccess('Téléchargement du fichier XML démarré');
 }
