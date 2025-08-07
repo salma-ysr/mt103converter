@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Éléments DOM
     const fileInput = document.getElementById('fileInput');
     const uploadArea = document.getElementById('uploadArea');
-    const browseBtn = document.getElementById('browseBtn');
+    const fileInfo = document.getElementById('fileInfo');
     const filePreview = document.getElementById('filePreview');
     const closePreview = document.getElementById('closePreview');
     const uploadProgress = document.getElementById('uploadProgress');
@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.getElementById('sidebar');
 
     // Menu mobile
-    if (menuToggle) {
+    if (menuToggle && sidebar) {
         menuToggle.addEventListener('click', function() {
             sidebar.classList.toggle('active');
         });
@@ -57,13 +57,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-
-    // Gestionnaire pour le bouton parcourir
-    if (browseBtn) {
-        browseBtn.addEventListener('click', function() {
-            fileInput.click();
-        });
-    }
 
     // Gestionnaire pour fermer l'aperçu
     if (closePreview) {
@@ -141,12 +134,33 @@ document.addEventListener('DOMContentLoaded', function() {
             switchToTextTab();
         });
     }
+
+    // Gestion du textarea pour l'onglet texte
+    const mt103TextInput = document.getElementById('mt103TextInput');
+    if (mt103TextInput) {
+        mt103TextInput.addEventListener('input', function() {
+            updateTextStats();
+            updateConvertButton();
+        });
+
+        mt103TextInput.addEventListener('paste', function() {
+            setTimeout(() => {
+                updateTextStats();
+                updateConvertButton();
+            }, 10);
+        });
+    }
 });
 
 // Fonction pour gérer la sélection de fichier (modernisée)
 function handleFileSelection(file) {
+    console.log('Handling file selection:', file.name);
+
     // Vérifications de base
-    if (!file) return;
+    if (!file) {
+        console.error('No file provided');
+        return;
+    }
 
     if (file.size > 5 * 1024 * 1024) { // 5MB
         showError('Le fichier est trop volumineux (max: 5MB)');
@@ -161,6 +175,7 @@ function handleFileSelection(file) {
     }
 
     selectedFile = file;
+    console.log('File selected:', selectedFile.name);
 
     // Afficher la progression
     showUploadProgress();
@@ -168,18 +183,39 @@ function handleFileSelection(file) {
     // Lire le fichier
     const reader = new FileReader();
     reader.onload = function(e) {
+        console.log('File loaded successfully');
         fileContent = e.target.result;
         hideUploadProgress();
         showFilePreview(file, fileContent);
         enableConvertButton();
+        showFileInfo();
     };
 
-    reader.onerror = function() {
+    reader.onerror = function(error) {
+        console.error('Error reading file:', error);
         hideUploadProgress();
         showError('Erreur lors de la lecture du fichier');
     };
 
-    reader.readAsText(file);
+    reader.readAsText(file, 'UTF-8');
+}
+
+// Afficher les informations de fichier
+function showFileInfo() {
+    const fileInfo = document.getElementById('fileInfo');
+    if (fileInfo) {
+        fileInfo.classList.add('show');
+        fileInfo.style.display = 'block';
+    }
+}
+
+// Masquer les informations de fichier
+function hideFileInfo() {
+    const fileInfo = document.getElementById('fileInfo');
+    if (fileInfo) {
+        fileInfo.classList.remove('show');
+        fileInfo.style.display = 'none';
+    }
 }
 
 // Afficher la progression de chargement
@@ -492,14 +528,13 @@ function convertFile() {
         loadingOverlay.classList.add('show');
     }
 
-    // Créer FormData pour l'envoi
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-
-    // Envoi vers le serveur
+    // Envoi du contenu texte directement (pas de FormData)
     fetch('/convert', {
         method: 'POST',
-        body: formData
+        headers: {
+            'Content-Type': 'text/plain',
+        },
+        body: fileContent  // Envoyer le contenu du fichier directement
     })
     .then(response => response.json())
     .then(data => {
@@ -530,15 +565,13 @@ function convertTextContent() {
         loadingOverlay.classList.add('show');
     }
 
-    // Envoi du contenu texte vers le serveur
-    fetch('/convert-text', {
+    // Envoi du contenu texte vers le serveur (même endpoint que pour les fichiers)
+    fetch('/convert', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'text/plain',
         },
-        body: JSON.stringify({
-            content: textInput.value
-        })
+        body: textInput.value  // Envoyer le contenu texte directement
     })
     .then(response => response.json())
     .then(data => {
@@ -610,7 +643,7 @@ function downloadFile(fileName, type) {
     document.body.removeChild(link);
 
     // Afficher une notification de succès
-    showSuccess(`Téléchargement du fichier ${type.toUpperCase()} démarré`);
+    showSuccess(`Tél��chargement du fichier ${type.toUpperCase()} démarré`);
 }
 
 // Afficher une notification de succès

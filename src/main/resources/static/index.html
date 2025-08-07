@@ -1045,9 +1045,68 @@ Format MT103 attendu : {1:...} {2:...} {4: :20:... :32A:... :50K:... :59:... :70
             <!-- File Info -->
             <div class="file-info" id="fileInfo">
                 <h4 style="color: var(--secondary-color); margin-bottom: 1rem;">📋 Informations du fichier</h4>
-                <div class="file-details" id="fileDetails">
-                    <!-- File details will be populated here -->
+
+                <!-- Upload Progress -->
+                <div class="upload-progress" id="uploadProgress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <div class="progress-text">Lecture du fichier en cours...</div>
                 </div>
+
+                <!-- File Preview -->
+                <div class="file-preview" id="filePreview" style="display: none;">
+                    <div class="file-header">
+                        <div class="file-name" id="previewFileName">-</div>
+                        <button class="close-preview-btn" id="closePreview">✕</button>
+                    </div>
+
+                    <div class="file-details" id="fileDetails">
+                        <div class="file-detail">
+                            <span class="detail-label">Taille :</span>
+                            <span class="detail-value" id="previewFileSize">-</span>
+                        </div>
+                        <div class="file-detail">
+                            <span class="detail-label">Type :</span>
+                            <span class="detail-value" id="previewFileType">-</span>
+                        </div>
+                        <div class="file-detail">
+                            <span class="detail-label">Modifié :</span>
+                            <span class="detail-value" id="previewFileDate">-</span>
+                        </div>
+                        <div class="file-detail">
+                            <span class="detail-label">Lignes :</span>
+                            <span class="detail-value" id="previewLines">-</span>
+                        </div>
+                        <div class="file-detail">
+                            <span class="detail-label">Caractères :</span>
+                            <span class="detail-value" id="previewChars">-</span>
+                        </div>
+                        <div class="file-detail">
+                            <span class="detail-label">Format :</span>
+                            <span class="detail-value" id="previewFormat">-</span>
+                        </div>
+                        <div class="file-detail">
+                            <span class="detail-label">Statut :</span>
+                            <span class="detail-value">
+                                <span class="status-indicator status-ready"></span>
+                                <span class="status-text" style="color: #4caf50;">Prêt</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="file-content-preview">
+                        <div class="content-header">
+                            <span>Aperçu du contenu :</span>
+                            <div class="preview-actions">
+                                <button class="preview-btn" id="validateBtn">✓ Valider</button>
+                                <button class="preview-btn" id="editBtn">✏️ Éditer</button>
+                            </div>
+                        </div>
+                        <pre class="content-preview" id="previewContent">Aucun contenu à afficher</pre>
+                    </div>
+                </div>
+
                 <div style="margin-top: 1.5rem; text-align: center;">
                     <button id="convertBtn" class="attj-btn" disabled>
                         🔄 Convertir vers PACS008
