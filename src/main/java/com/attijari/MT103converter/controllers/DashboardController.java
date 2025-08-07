@@ -49,6 +49,138 @@ public class DashboardController {
         return getRealTimelineData(currentUser);
     }
 
+    /**
+     * API pour les données du graphique en camembert (succès/erreurs)
+     */
+    @GetMapping("/api/dashboard/pie-data")
+    public Map<String, Object> getPieData() {
+        String currentUser = getCurrentUsername();
+        logger.debug("Récupération des données de graphique en camembert pour l'utilisateur: {}", currentUser);
+
+        Map<String, Object> pieData = new HashMap<>();
+
+        try {
+            if (mt103Repository != null) {
+                // Récupérer tous les messages de l'utilisateur
+                List<com.attijari.MT103converter.models.MT103Msg> messages =
+                    mt103Repository.findTop50ByUsernameOrderByCreatedAtDesc(currentUser);
+
+                // Compter les succès et erreurs
+                long successCount = messages.stream()
+                    .filter(msg -> msg.getPacs008Xml() != null && msg.getPacs008Xml().trim().length() > 50)
+                    .count();
+
+                long errorCount = messages.size() - successCount;
+
+                pieData.put("success", successCount);
+                pieData.put("errors", errorCount);
+                pieData.put("total", messages.size());
+
+                logger.debug("Données pie chart pour {}: {} succès, {} erreurs", currentUser, successCount, errorCount);
+            } else {
+                // Données par défaut si pas de repository
+                pieData.put("success", 0);
+                pieData.put("errors", 0);
+                pieData.put("total", 0);
+            }
+        } catch (Exception e) {
+            logger.error("Erreur lors de la récupération des données pie chart pour {}: {}", currentUser, e.getMessage());
+            // Données par défaut en cas d'erreur
+            pieData.put("success", 0);
+            pieData.put("errors", 0);
+            pieData.put("total", 0);
+        }
+
+        return pieData;
+    }
+
+    /**
+     * API pour récupérer l'activité récente de l'utilisateur
+     */
+    @GetMapping("/api/dashboard/recent-activity")
+    public List<Map<String, Object>> getRecentActivity() {
+        String currentUser = getCurrentUsername();
+        logger.debug("Récupération de l'activité récente pour l'utilisateur: {}", currentUser);
+
+        List<Map<String, Object>> activities = new ArrayList<>();
+
+        try {
+            if (mt103Repository != null) {
+                // Récupérer les 3 dernières conversions de l'utilisateur
+                List<com.attijari.MT103converter.models.MT103Msg> recentMessages =
+                    mt103Repository.findTop3ByUsernameOrderByCreatedAtDesc(currentUser);
+
+                for (com.attijari.MT103converter.models.MT103Msg message : recentMessages) {
+                    Map<String, Object> activity = new HashMap<>();
+
+                    // Déterminer si c'est un succès ou une erreur
+                    boolean isSuccess = message.getPacs008Xml() != null &&
+                                      message.getPacs008Xml().trim().length() > 50;
+
+                    activity.put("type", isSuccess ? "success" : "error");
+                    activity.put("title", isSuccess ? "Conversion réussie" : "Échec de conversion");
+
+                    // Créer la description
+                    StringBuilder description = new StringBuilder();
+                    description.append("MT103 → PACS008");
+
+                    // Ajouter le montant si disponible
+                    try {
+                        String field32A = message.getField("32A");
+                        if (field32A != null && field32A.length() > 9) {
+                            String currency = field32A.substring(6, 9);
+                            String amountStr = field32A.substring(9).replace(",", ".");
+                            description.append(" | Montant: ").append(amountStr).append(" ").append(currency);
+                        }
+                    } catch (Exception e) {
+                        // Ignorer les erreurs d'extraction du montant
+                    }
+
+                    // Ajouter la référence de transaction si disponible
+                    try {
+                        String transactionRef = message.getField("20");
+                        if (transactionRef != null && !transactionRef.trim().isEmpty()) {
+                            description.append(" | Réf: ").append(transactionRef.trim().substring(0, Math.min(10, transactionRef.trim().length())));
+                        }
+                    } catch (Exception e) {
+                        // Ignorer les erreurs d'extraction de référence
+                    }
+
+                    activity.put("description", description.toString());
+
+                    // Calculer le temps relatif
+                    LocalDateTime now = LocalDateTime.now();
+                    LocalDateTime createdAt = message.getCreatedAt();
+                    long minutesAgo = java.time.Duration.between(createdAt, now).toMinutes();
+
+                    String timeAgo;
+                    if (minutesAgo < 1) {
+                        timeAgo = "À l'instant";
+                    } else if (minutesAgo < 60) {
+                        timeAgo = "Il y a " + minutesAgo + " min";
+                    } else if (minutesAgo < 1440) {
+                        long hoursAgo = minutesAgo / 60;
+                        timeAgo = "Il y a " + hoursAgo + "h";
+                    } else {
+                        long daysAgo = minutesAgo / 1440;
+                        timeAgo = "Il y a " + daysAgo + "j";
+                    }
+
+                    activity.put("time", timeAgo);
+                    activities.add(activity);
+                }
+
+                logger.debug("Activité récente générée pour {}: {} éléments", currentUser, activities.size());
+            } else {
+                logger.warn("Repository MT103 est null, pas d'activité récente disponible");
+            }
+        } catch (Exception e) {
+            logger.error("Erreur lors de la récupération de l'activité récente pour {}: {}", currentUser, e.getMessage());
+        }
+
+        return activities;
+    }
+
     // === Méthodes pour récupérer l'utilisateur connecté ===
 
     private String getCurrentUsername() {

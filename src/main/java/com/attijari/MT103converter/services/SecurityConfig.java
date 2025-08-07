@@ -35,11 +35,11 @@ public class SecurityConfig {
                             .requestMatchers("/public/**").permitAll()
                             .requestMatchers("/admin/**").hasRole("ADMIN")
                             .requestMatchers("/user/**").hasRole("USER")
-                            .requestMatchers("/", "/index.html", "/dashboard", "/historique", "/conversion", "/api/**").authenticated()  // Ajouter conversion aux routes protégées
+                            .requestMatchers("/", "/index.html", "/dashboard", "/historique", "/conversion", "/api/**", "/convert", "/download/**").authenticated()  // Ajouter conversion et download aux routes protégées
                             .anyRequest().authenticated()
                     )
                     .csrf(csrf -> csrf
-                            .ignoringRequestMatchers("/api/**")  // Désactiver CSRF pour les API endpoints
+                            .ignoringRequestMatchers("/api/**", "/convert", "/download/**")  // Désactiver CSRF pour les endpoints de conversion et de téléchargement
                     )
                     .oauth2Login(oauth2 -> oauth2
                             .loginPage("/login.html")

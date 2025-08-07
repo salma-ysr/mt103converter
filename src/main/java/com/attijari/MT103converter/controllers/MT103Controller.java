@@ -16,12 +16,15 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api")
 public class MT103Controller {
     private static final Logger logger = LogManager.getLogger(MT103Controller.class);
 
     private final MT103ToPacs008Converter converter;
     private final MT103MsgRepository repository;
+
+    // Stockage temporaire du dernier fichier converti
+    private static String lastConvertedXml = null;
+    private static String lastConvertedFilename = null;
 
     public MT103Controller(MT103ToPacs008Converter converter, MT103MsgRepository repository) {
         this.converter = converter;
@@ -72,6 +75,10 @@ public class MT103Controller {
                 // Log détaillé pour déboguer
                 logger.debug("XML content preview: {}",
                            result.getXmlContent() != null ? result.getXmlContent().substring(0, Math.min(100, result.getXmlContent().length())) : "NULL");
+
+                // Sauvegarder le dernier fichier converti
+                lastConvertedXml = result.getXmlContent();
+                lastConvertedFilename = "MT103_" + System.currentTimeMillis() + ".xml";
             } else {
                 // Pour les erreurs : sauvegarder SANS XML (pacs008Xml = null)
                 mt103Msg.setPacs008Xml(null);  // Explicitement null pour indiquer l'erreur
@@ -151,6 +158,22 @@ public class MT103Controller {
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(message.getPacs008Xml());
+    }
+
+    // Télécharger le dernier fichier converti
+    @GetMapping("/download/pacs008")
+    public ResponseEntity<String> downloadLastConvertedFile() {
+        if (lastConvertedXml == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + (lastConvertedFilename != null ? lastConvertedFilename : "pacs008.xml"));
+        headers.add(HttpHeaders.CONTENT_TYPE, "application/xml; charset=utf-8");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(lastConvertedXml);
     }
 
     // Classe pour la réponse JSON

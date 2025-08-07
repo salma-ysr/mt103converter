@@ -30,4 +30,6 @@ public interface MT103MsgRepository extends MongoRepository<MT103Msg, String> {
     long countByUsernameAndCreatedAtBetweenAndPacs008XmlIsNotNull(String username, LocalDateTime start, LocalDateTime end);
     List<MT103Msg> findByUsernameAndCreatedAtBetweenOrderByCreatedAtDesc(String username, LocalDateTime start, LocalDateTime end);
     List<MT103Msg> findTop50ByUsernameOrderByCreatedAtDesc(String username);
+    List<MT103Msg> findTop10ByUsernameOrderByCreatedAtDesc(String username);
+    List<MT103Msg> findTop3ByUsernameOrderByCreatedAtDesc(String username);
 }

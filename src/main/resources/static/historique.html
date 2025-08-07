@@ -6,165 +6,460 @@
     <title>Historique des conversions - Attijari MT103 Converter</title>
     <link rel="stylesheet" href="/style-attijari.css">
     <style>
-        /* Sidebar styles like in index.html */
+        :root {
+            --primary-color: #ff9800;
+            --secondary-color: #ffb300;
+            --accent-color: #F4C204FF;
+            --bg-dark: #0f0f0f;
+            --bg-card: #1a1a1a;
+            --bg-surface: #222;
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --text-muted: #888888;
+            --border-color: #333333;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --shadow-hover: 0 8px 32px rgba(255, 179, 0, 0.2);
+            --radius: 12px;
+            --sidebar-width: 260px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1a1a 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* === SIDEBAR - SAME AS DASHBOARD === */
         .sidebar {
-            background: #181818;
-            color: #fff;
-            width: 250px;
+            background: linear-gradient(180deg, #181818 0%, #0f0f0f 100%);
+            color: var(--text-primary);
+            width: var(--sidebar-width);
             position: fixed;
             top: 0;
             bottom: 0;
             left: 0;
-            padding: 2rem 1rem;
+            padding: 1.5rem;
             display: flex;
             flex-direction: column;
             gap: 1rem;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            transition: transform 0.3s ease;
         }
+
         .sidebar-header {
             display: flex;
             align-items: center;
             gap: 1rem;
             margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
         }
+
         .sidebar-logo {
-            width: 40px;
-            height: 40px;
+            width: 45px;
+            height: 45px;
             object-fit: cover;
+            border-radius: 8px;
         }
+
         .sidebar-title {
-            font-size: 1.5rem;
-            font-weight: bold;
+            font-size: 1.4rem;
+            font-weight: 700;
             margin: 0;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
+
         .sidebar-nav {
             flex-grow: 1;
         }
+
         .nav-item {
-            margin: 1rem 0;
+            margin: 0.5rem 0;
         }
+
         .nav-link {
-            color: #fff;
+            color: var(--text-secondary);
             text-decoration: none;
-            font-size: 1.1rem;
+            font-size: 1rem;
+            font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
+
+        .nav-link:before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, var(--primary-color), transparent);
+            transition: width 0.3s ease;
+            z-index: -1;
+        }
+
+        .nav-link:hover:before,
+        .nav-link.active:before {
+            width: 100%;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: var(--text-primary);
+            background: rgba(255, 152, 0, 0.1);
+            transform: translateX(5px);
+        }
+
         .nav-icon {
             font-size: 1.2rem;
+            min-width: 20px;
         }
-        .nav-link.active {
-            color: #ff9800;
-        }
+
         .logout-section {
             margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
         }
+
         .logout-btn {
-            background: #d45f3b;
-            color: #fff;
+            background: linear-gradient(135deg, #d45f3b, #b71c1c);
+            color: var(--text-primary);
             border: none;
-            border-radius: 6px;
-            padding: 0.7rem 1rem;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
             font-size: 1rem;
+            font-weight: 600;
             cursor: pointer;
             width: 100%;
             text-align: center;
-        }
-        .logout-btn:hover {
-            background: #b71c1c;
-        }
-        .main-content {
-            margin-left: 270px;
-            padding: 2rem;
-            flex-grow: 1;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
         }
 
-        /* Historique specific styles */
-        .attj-history-card {
-            background: #222;
-            border-radius: 12px;
-            box-shadow: 0 4px 24px #0008;
-            padding: 2rem 2.5rem;
-            margin: 2rem auto;
-            border: 1px solid #ff9800;
+        .logout-btn:hover {
+            background: linear-gradient(135deg, #b71c1c, #8b0000);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
         }
-        .attj-history-header {
+
+        /* === MAIN CONTENT === */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 2rem;
+            flex-grow: 1;
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 1rem;
-            margin-bottom: 2rem;
         }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .attj-btn {
+            background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: #181818;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            box-shadow: var(--shadow);
+        }
+
+        .attj-btn:hover {
+            background: linear-gradient(90deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .attj-btn.danger {
+            background: linear-gradient(135deg, #d45f3b, #b71c1c);
+            color: var(--text-primary);
+        }
+
+        .attj-btn.danger:hover {
+            background: linear-gradient(135deg, #b71c1c, #8b0000);
+        }
+
+        /* === HISTORY CARD === */
+        .history-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .history-card:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        }
+
+        .history-stats {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            color: var(--secondary-color);
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        /* === TABLE === */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-top: 1rem;
+        }
+
         .attj-history-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 1.5rem;
+            background: var(--bg-surface);
+            font-size: 0.9rem; /* Réduire la taille de police générale */
         }
-        .attj-history-table th, .attj-history-table td {
-            padding: 1rem;
+
+        .attj-history-table th,
+        .attj-history-table td {
+            padding: 0.75rem 0.5rem; /* Réduire le padding pour plus de compacité */
             text-align: left;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
         }
+
         .attj-history-table th {
-            background: #181818;
-            color: #ffb300;
-            font-weight: bold;
+            background: var(--bg-dark);
+            color: var(--secondary-color);
+            font-weight: 600;
+            font-size: 0.8rem; /* Réduire la taille des en-têtes */
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
         }
-        .attj-history-table tr:hover {
-            background: rgba(255, 179, 0, 0.1);
-        }
-        .attj-btn {
-            background: linear-gradient(90deg, #ffb300 0%, #ff9800 100%);
-            color: #181818;
-            border: none;
-            border-radius: 6px;
-            padding: 0.75rem 1.5rem;
-            font-weight: bold;
-            cursor: pointer;
+
+        .attj-history-table tr {
             transition: all 0.3s ease;
         }
-        .attj-btn:hover {
-            background: linear-gradient(90deg, #ff9800 0%, #ffb300 100%);
-            transform: translateY(-2px);
+
+        .attj-history-table tbody tr:hover {
+            background: rgba(255, 179, 0, 0.05);
         }
+
+        /* Colonnes spécifiques avec tailles optimisées */
+        .attj-history-table th:nth-child(1), /* Date */
+        .attj-history-table td:nth-child(1) {
+            width: 12%;
+            min-width: 100px;
+        }
+
+        .attj-history-table th:nth-child(2), /* Montant */
+        .attj-history-table td:nth-child(2) {
+            width: 10%;
+            min-width: 80px;
+            text-align: right;
+        }
+
+        .attj-history-table th:nth-child(3), /* Statut */
+        .attj-history-table td:nth-child(3) {
+            width: 8%;
+            min-width: 70px;
+            text-align: center;
+        }
+
+        .attj-history-table th:nth-child(4), /* Fichier */
+        .attj-history-table td:nth-child(4) {
+            width: 15%;
+            min-width: 120px;
+        }
+
+        .attj-history-table th:nth-child(5), /* Actions */
+        .attj-history-table td:nth-child(5) {
+            width: 55%;
+            min-width: 300px;
+        }
+
+        /* Statuts styles */
         .attj-status-success {
             color: #4caf50;
-            font-weight: bold;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem; /* Réduire le padding */
+            border-radius: 15px; /* Réduire le border-radius */
+            background: rgba(76, 175, 80, 0.1);
+            font-size: 0.8rem; /* Réduire la taille de police */
+            display: inline-block;
+            white-space: nowrap;
         }
+
         .attj-status-error {
             color: #f44336;
-            font-weight: bold;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem; /* Réduire le padding */
+            border-radius: 15px; /* Réduire le border-radius */
+            background: rgba(244, 67, 54, 0.1);
+            font-size: 0.8rem; /* Réduire la taille de police */
+            display: inline-block;
+            white-space: nowrap;
         }
-        .attj-pagination {
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
-            margin-top: 2rem;
+
+        /* Styles pour les boutons dans le tableau */
+        .attj-history-table .attj-btn {
+            font-size: 0.75rem; /* Réduire la taille de police des boutons */
+            padding: 0.4rem 0.8rem; /* Réduire le padding des boutons */
+            margin: 0.2rem; /* Réduire les marges */
+            white-space: nowrap;
+            min-width: auto;
         }
-        .attj-pagination button {
-            background: #333;
-            color: #fff;
-            border: 1px solid #ff9800;
-            border-radius: 4px;
-            padding: 0.5rem 1rem;
+
+        .attj-history-table .file-info {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.3rem;
+        }
+
+        /* Actions column buttons alignment */
+        .attj-history-table td:nth-child(5) .attj-btn,
+        .attj-history-table td:nth-child(6) .attj-btn {
+            display: inline-block;
+            margin: 0.1rem;
+        }
+
+        /* === RESPONSIVE === */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+
+            .page-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
+
+            .history-stats {
+                justify-content: center;
+            }
+
+            .attj-history-table {
+                font-size: 0.9rem;
+            }
+
+            .attj-history-table th,
+            .attj-history-table td {
+                padding: 0.75rem 0.5rem;
+            }
+        }
+
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1001;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.5rem;
             cursor: pointer;
-            transition: all 0.3s ease;
+            font-size: 1.5rem;
+            color: var(--text-primary);
         }
-        .attj-pagination button.active {
-            background: #ff9800;
-            color: #181818;
-        }
-        .attj-pagination button:hover {
-            background: #ff9800;
-            color: #181818;
+
+        @media (max-width: 768px) {
+            .menu-toggle {
+                display: block;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Mobile Menu Toggle -->
+    <button class="menu-toggle" id="menuToggle">☰</button>
+
     <!-- Sidebar Navigation -->
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <img src="/LogoAttijari.png" alt="Attijariwafa Bank" class="sidebar-logo">
             <h3 class="sidebar-title">MT103 Converter</h3>
@@ -197,52 +492,54 @@
     </div>
 
     <div class="main-content">
-        <header class="attj-header">
-            <div class="attj-logo">
-                <img src="/LogoAttijari.png" alt="Attijari Logo" class="attj-logo-image">
-                <span class="attj-logo-text">Historique des Conversions</span>
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Historique</h1>
+                <p class="page-subtitle">Historique des conversions MT103 vers PACS008</p>
             </div>
-        </header>
-
-        <main>
-            <div class="attj-history-card">
-                <div class="attj-history-header">
-                    <h1>Historique des conversions MT103</h1>
-                    <button id="clearHistory" class="attj-btn">Effacer l'historique</button>
-                </div>
-
-                <div class="attj-history-stats">
-                    <div>Total conversions : <span id="totalConversions">-</span></div>
-                    <div>Dernière mise à jour : <span id="lastUpdate">-</span></div>
-                </div>
-
-                <div class="attj-history-table-container">
-                    <table class="attj-history-table">
-                        <thead>
-                            <tr>
-                                <th>Date Conversion</th>
-                                <th>Montant</th>
-                                <th>Statut</th>
-                                <th>File In (MT103)</th>
-                                <th>File Out (PACS008)</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historyTableBody">
-                            <tr>
-                                <td colspan="6" style="text-align: center;">Chargement...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="attj-pagination" id="pagination"></div>
+            <div class="header-actions">
+                <button id="clearHistory" class="attj-btn danger">🗑️ Effacer l'historique</button>
             </div>
-        </main>
+        </div>
 
-        <footer class="attj-footer">
-            <span>© 2025 Attijari MT103 Converter</span>
-        </footer>
+        <!-- History Card -->
+        <div class="history-card">
+            <div class="history-stats">
+                <div class="stat-item">
+                    <div class="stat-label">Total conversions</div>
+                    <div class="stat-value" id="totalConversions">-</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Dernière mise à jour</div>
+                    <div class="stat-value" id="lastUpdate" style="font-size: 1rem;">-</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="attj-history-table">
+                    <thead>
+                        <tr>
+                            <th>Date Conversion</th>
+                            <th>Montant</th>
+                            <th>Statut</th>
+                            <th>File In (MT103)</th>
+                            <th>File Out (PACS008)</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                                Chargement...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="attj-pagination" id="pagination"></div>
+        </div>
     </div>
 
     <script>

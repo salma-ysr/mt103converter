@@ -9,10 +9,14 @@ import com.attijari.MT103converter.services.Transformer;
 import com.attijari.MT103converter.services.Validator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import java.util.List;
 
 @Component
 public class MT103ToPacs008Converter {
+
+    private static final Logger logger = LogManager.getLogger(MT103ToPacs008Converter.class);
 
     @Autowired
     private MT103Parser parser;
@@ -38,9 +42,18 @@ public class MT103ToPacs008Converter {
         ErrorCall mt103Errors = validator.validateMT103(mt103);
         if (mt103Errors.hasErrors()) {
             StringBuilder errorMsg = new StringBuilder();
+
+            // *** LOG DÉTAILLÉ DES ERREURS ***
+            logger.error("❌ VALIDATION MT103 ÉCHOUÉE - {} erreurs détectées:", mt103Errors.getErrors().size());
+
             for (String err : mt103Errors.getErrors()) {
                 errorMsg.append("• ").append(err).append("\n");
+                logger.error("   - {}", err);  // Logger chaque erreur individuellement
             }
+
+            logger.error("❌ CONTENU MT103 EN ERREUR (première 200 caractères): {}",
+                        rawMT103.length() > 200 ? rawMT103.substring(0, 200) + "..." : rawMT103);
+
             // Retourner l'objet MT103 même en cas d'erreur pour pouvoir le sauvegarder
             return new ConversionResult(false, null, errorMsg.toString().trim(), mt103);
         }

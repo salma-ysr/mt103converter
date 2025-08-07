@@ -180,18 +180,41 @@ public class HistoriqueController {
     /**
      * API pour supprimer un élément de l'historique
      */
-    @GetMapping("/api/historique/delete")
+    @DeleteMapping("/api/historique/delete")
     public Map<String, Object> deleteHistoryItem(@RequestParam String id) {
-        logger.info("Suppression de l'élément d'historique: {}", id);
+        String currentUser = getCurrentUsername();
+        logger.info("Suppression de l'élément d'historique: {} pour l'utilisateur: {}", id, currentUser);
 
         Map<String, Object> response = new HashMap<>();
 
         try {
-            // TODO: Implémenter la suppression réelle
-            response.put("success", true);
-            response.put("message", "Élément supprimé avec succès");
+            if (mt103Repository != null) {
+                // Vérifier que l'élément existe et appartient à l'utilisateur connecté
+                Optional<MT103Msg> messageOpt = mt103Repository.findById(id);
+                if (messageOpt.isPresent()) {
+                    MT103Msg message = messageOpt.get();
+                    if (currentUser.equals(message.getUsername())) {
+                        // Supprimer l'élément
+                        mt103Repository.deleteById(id);
+                        response.put("success", true);
+                        response.put("message", "Élément supprimé avec succès");
+                        logger.info("Élément {} supprimé avec succès pour l'utilisateur {}", id, currentUser);
+                    } else {
+                        response.put("success", false);
+                        response.put("message", "Vous n'êtes pas autorisé à supprimer cet élément");
+                        logger.warn("Tentative de suppression non autorisée de l'élément {} par l'utilisateur {}", id, currentUser);
+                    }
+                } else {
+                    response.put("success", false);
+                    response.put("message", "Élément introuvable");
+                    logger.warn("Tentative de suppression d'un élément inexistant: {}", id);
+                }
+            } else {
+                response.put("success", false);
+                response.put("message", "Repository non disponible");
+            }
         } catch (Exception e) {
-            logger.error("Erreur lors de la suppression: {}", e.getMessage());
+            logger.error("Erreur lors de la suppression de l'élément {}: {}", id, e.getMessage());
             response.put("success", false);
             response.put("message", "Erreur lors de la suppression");
         }
@@ -200,20 +223,36 @@ public class HistoriqueController {
     }
 
     /**
-     * API pour effacer tout l'historique
+     * API pour effacer tout l'historique de l'utilisateur connecté
      */
-    @GetMapping("/api/historique/clear")
+    @DeleteMapping("/api/historique/clear")
     public Map<String, Object> clearHistory() {
-        logger.info("Effacement de l'historique complet");
+        String currentUser = getCurrentUsername();
+        logger.info("Effacement de l'historique complet pour l'utilisateur: {}", currentUser);
 
         Map<String, Object> response = new HashMap<>();
 
         try {
-            // TODO: Implémenter l'effacement réel
-            response.put("success", true);
-            response.put("message", "Historique effacé avec succès");
+            if (mt103Repository != null) {
+                // Supprimer tous les messages de l'utilisateur connecté
+                List<MT103Msg> userMessages = mt103Repository.findTop50ByUsernameOrderByCreatedAtDesc(currentUser);
+                int deletedCount = 0;
+                
+                for (MT103Msg message : userMessages) {
+                    mt103Repository.delete(message);
+                    deletedCount++;
+                }
+                
+                response.put("success", true);
+                response.put("message", "Historique effacé avec succès");
+                response.put("deletedCount", deletedCount);
+                logger.info("Historique effacé avec succès pour l'utilisateur {}: {} éléments supprimés", currentUser, deletedCount);
+            } else {
+                response.put("success", false);
+                response.put("message", "Repository non disponible");
+            }
         } catch (Exception e) {
-            logger.error("Erreur lors de l'effacement: {}", e.getMessage());
+            logger.error("Erreur lors de l'effacement de l'historique pour l'utilisateur {}: {}", currentUser, e.getMessage());
             response.put("success", false);
             response.put("message", "Erreur lors de l'effacement");
         }
@@ -222,6 +261,88 @@ public class HistoriqueController {
     }
 
     // === Méthodes utilitaires ===
+
+    /**
+     * Récupération sécurisée d'un champ depuis MT103Msg
+     */
+    private String safeGetField(MT103Msg msg, String fieldTag) {
+        try {
+            String value = msg.getField(fieldTag);
+            return value != null ? value : "";
+        } catch (Exception e) {
+            logger.debug("Erreur lors de la récupération du champ {}: {}", fieldTag, e.getMessage());
+            return "";
+        }
+    }
+
+    /**
+     * Extraction du montant depuis le champ 32A
+     */
+    private String extractAmount(String field32A) {
+        if (field32A == null || field32A.trim().isEmpty()) {
+            return "N/A";
+        }
+        try {
+            // Format 32A : YYMMDDCCCAMOUNT
+            // Exemple : 251201USD1000,00
+            String cleanField = field32A.replaceAll("[\\r\\n]", "");
+            if (cleanField.length() > 9) {
+                // Extraire la partie montant après la devise (3 caractères) et la date (6 caractères)
+                String amountPart = cleanField.substring(9);
+                // Nettoyer et formater le montant
+                return amountPart.replaceAll("[^0-9.,]", "");
+            }
+        } catch (Exception e) {
+            logger.debug("Erreur lors de l'extraction du montant de {}: {}", field32A, e.getMessage());
+        }
+        return "N/A";
+    }
+
+    /**
+     * Extraction de la devise depuis le champ 32A
+     */
+    private String extractCurrency(String field32A) {
+        if (field32A == null || field32A.trim().isEmpty()) {
+            return "N/A";
+        }
+        try {
+            // Format 32A : YYMMDDCCCAMOUNT
+            // Extraire les 3 caractères de devise après la date
+            String cleanField = field32A.replaceAll("[\\r\\n]", "");
+            if (cleanField.length() > 8) {
+                return cleanField.substring(6, 9);
+            }
+        } catch (Exception e) {
+            logger.debug("Erreur lors de l'extraction de la devise de {}: {}", field32A, e.getMessage());
+        }
+        return "N/A";
+    }
+
+    /**
+     * Extraction de la première ligne d'un champ multi-ligne
+     */
+    private String extractFirstLine(String field) {
+        if (field == null || field.trim().isEmpty()) {
+            return "N/A";
+        }
+        try {
+            String[] lines = field.split("\\r?\\n");
+            return lines.length > 0 ? lines[0].trim() : "N/A";
+        } catch (Exception e) {
+            logger.debug("Erreur lors de l'extraction de la première ligne de {}: {}", field, e.getMessage());
+            return "N/A";
+        }
+    }
+
+    /**
+     * Formatage de la taille de fichier
+     */
+    private String formatFileSize(int bytes) {
+        if (bytes == 0) return "0 B";
+        String[] units = {"B", "KB", "MB", "GB"};
+        int digitGroups = (int) (Math.log10(bytes) / Math.log10(1024));
+        return String.format("%.1f %s", bytes / Math.pow(1024, digitGroups), units[digitGroups]);
+    }
 
     private long getTotalConversions() {
         try {
@@ -353,57 +474,5 @@ public class HistoriqueController {
             logger.error("Erreur lors du téléchargement: {}", e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
-    }
-
-    // === Méthodes utilitaires pour l'extraction des données ===
-
-    private String extractAmount(String field32A) {
-        if (field32A == null || field32A.isEmpty()) return "0.00";
-        try {
-            // Format 32A: YYMMDDCCCNNNNN
-            String amountStr = field32A.length() > 9 ? field32A.substring(9) : "0.00";
-            amountStr = amountStr.replace(",", ".");
-            double amount = Double.parseDouble(amountStr);
-            return String.format("%.2f", amount);
-        } catch (Exception e) {
-            return "0.00";
-        }
-    }
-
-    private String extractCurrency(String field32A) {
-        if (field32A == null || field32A.isEmpty()) return "EUR";
-        try {
-            return field32A.length() > 9 ? field32A.substring(6, 9) : "EUR";
-        } catch (Exception e) {
-            return "EUR";
-        }
-    }
-
-    private String extractFirstLine(String field) {
-        if (field == null || field.isEmpty()) return "";
-        String[] lines = field.split("\n");
-        return lines.length > 0 ? lines[0].trim() : "";
-    }
-
-    private String safeGetField(MT103Msg msg, String fieldName) {
-        try {
-            String value = msg.getField(fieldName);
-            return value != null ? value : "";
-        } catch (Exception e) {
-            logger.warn("Erreur lors de l'accès au champ {}: {}", fieldName, e.getMessage());
-            return "";
-        }
-    }
-
-    private String formatFileSize(int sizeInBytes) {
-        if (sizeInBytes <= 0) return "0 Ko";
-        String[] units = {"Ko", "Mo", "Go", "To"};
-        int i = 0;
-        double size = sizeInBytes;
-        while (size >= 1024 && i < units.length - 1) {
-            size /= 1024;
-            i++;
-        }
-        return String.format("%.1f %s", size, units[i]);
     }
 }

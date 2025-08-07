@@ -79,6 +79,21 @@ public class Validator {
         value = msg.getField("71A");
         if (value == null || value.trim().isEmpty()) {
             errors.addError("Erreur : Le champ Répartition des frais (:71A) est manquant");
+            logger.warn("Missing tag :71A (Répartition des frais)");
+        }
+
+        // Vérification du champ 33B (Currency/Amount) - OBLIGATOIRE
+        value = msg.getField("33B");
+        if (value == null || value.trim().isEmpty()) {
+            errors.addError("Erreur : Le champ Devise/Montant (:33B) est manquant");
+            logger.warn("Missing tag :33B (Devise/Montant)");
+        }
+
+        // Vérification du champ 70 (Remittance Information) - OBLIGATOIRE
+        value = msg.getField("70");
+        if (value == null || value.trim().isEmpty()) {
+            errors.addError("Erreur : Le champ Texte descriptif (:70) est manquant");
+            logger.warn("Missing tag :70 (Texte descriptif)");
         }
 
         // Si ni 50A ni 50K n'est présent, erreur
@@ -350,7 +365,7 @@ public class Validator {
     }
 
     private String truncateValue(String value) {
-        if (value == null || value.trim().isEmpty()) return "[vide]";
+        if (value == null) return "null";
         if (value.length() <= 50) return value;
         return value.substring(0, 47) + "...";
     }
@@ -490,8 +505,8 @@ public class Validator {
      * Valide la structure interne du bloc 4 (Text Block)
      */
     private void validateBlock4Structure(String block4, ErrorCall errors) {
-        // Vérifier la présence des champs obligatoires
-        String[] requiredFields = {":20:", ":23B:", ":32A:", ":59:", ":71A:"};
+        // Vérifier la présence des champs obligatoires dans le bloc 4
+        String[] requiredFields = {":20:", ":23B:", ":32A:", ":33B:", ":59:", ":70:", ":71A:"};
 
         for (String field : requiredFields) {
             if (!block4.contains(field)) {
@@ -515,9 +530,11 @@ public class Validator {
             case ":20:": return "Référence de transaction";
             case ":23B:": return "Code opération bancaire";
             case ":32A:": return "Date valeur/Devise/Montant";
+            case ":33B:": return "Devise/Montant de change";
             case ":50A:": return "Donneur d'ordre (Option A)";
             case ":50K:": return "Donneur d'ordre (Option K)";
             case ":59:": return "Bénéficiaire";
+            case ":70:": return "Détails du paiement";
             case ":71A:": return "Répartition des frais";
             default: return "Champ inconnu";
         }
