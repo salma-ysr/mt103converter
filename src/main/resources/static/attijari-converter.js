@@ -211,9 +211,23 @@ function handleFileSelection(file) {
 // Afficher les informations de fichier
 function showFileInfo() {
     const fileInfo = document.getElementById('fileInfo');
+    const convertBtn = document.getElementById('convertBtn');
+
     if (fileInfo) {
         fileInfo.classList.add('show');
         fileInfo.style.display = 'block';
+    }
+
+    // Afficher le bouton de conversion quand les infos du fichier sont affichées
+    if (convertBtn) {
+        convertBtn.style.display = 'inline-block';
+        convertBtn.disabled = false;
+        convertBtn.classList.add('btn-appear');
+
+        // Retirer la classe d'animation après l'animation
+        setTimeout(() => {
+            convertBtn.classList.remove('btn-appear');
+        }, 300);
     }
 }
 
