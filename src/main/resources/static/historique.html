@@ -393,7 +393,118 @@
             margin: 0.1rem;
         }
 
-        /* === RESPONSIVE === */
+        /* === PAGINATION MODERNE === */
+        .attj-pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+            padding: 1rem;
+        }
+
+        .attj-pagination button {
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            min-width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .attj-pagination button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 152, 0, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .attj-pagination button:hover::before {
+            left: 100%;
+        }
+
+        .attj-pagination button:hover {
+            background: rgba(255, 152, 0, 0.1);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+        }
+
+        .attj-pagination button.active {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: #1a1a1a;
+            border-color: var(--secondary-color);
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
+            z-index: 1;
+        }
+
+        .attj-pagination button.active:hover {
+            transform: scale(1.1) translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 152, 0, 0.5);
+        }
+
+        .attj-pagination .pagination-ellipsis {
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 0.75rem;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .attj-pagination .pagination-nav {
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .attj-pagination .pagination-nav:hover {
+            background: rgba(255, 152, 0, 0.1);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+        }
+
+        .attj-pagination .pagination-nav:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .attj-pagination .pagination-nav:disabled:hover {
+            background: var(--bg-surface);
+            border-color: var(--border-color);
+            color: var(--text-muted);
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -428,6 +539,23 @@
             .attj-history-table th,
             .attj-history-table td {
                 padding: 0.75rem 0.5rem;
+            }
+
+            .attj-pagination {
+                gap: 0.25rem;
+                padding: 0.5rem;
+            }
+
+            .attj-pagination button {
+                padding: 0.5rem 0.75rem;
+                min-width: 40px;
+                height: 40px;
+                font-size: 0.9rem;
+            }
+
+            .attj-pagination .pagination-nav {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.8rem;
             }
         }
 
@@ -612,6 +740,16 @@
             }
 
             let html = '';
+
+            // Bouton Précédent
+            html += `
+                <button class="pagination-nav" ${currentPage === 0 ? 'disabled' : ''}
+                        onclick="${currentPage > 0 ? `loadHistory(${currentPage - 1})` : ''}">
+                    <span>←</span> Précédent
+                </button>
+            `;
+
+            // Afficher tous les numéros de pages
             for (let i = 0; i < totalPages; i++) {
                 html += `
                     <button
@@ -622,6 +760,15 @@
                     </button>
                 `;
             }
+
+            // Bouton Suivant
+            html += `
+                <button class="pagination-nav" ${currentPage === totalPages - 1 ? 'disabled' : ''}
+                        onclick="${currentPage < totalPages - 1 ? `loadHistory(${currentPage + 1})` : ''}">
+                    Suivant <span>→</span>
+                </button>
+            `;
+
             pagination.innerHTML = html;
         }
 
