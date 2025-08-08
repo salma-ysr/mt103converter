@@ -116,6 +116,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Gestionnaire du nouveau bouton de conversion pour l'onglet texte
+    const convertBtnText = document.getElementById('convertBtnText');
+    if (convertBtnText) {
+        convertBtnText.addEventListener('click', function() {
+            convertTextContent();
+        });
+    }
+
     // Gestion des onglets
     initializeTabs();
 
@@ -470,7 +478,7 @@ function updateTextStats() {
     const charCount = document.getElementById('charCount');
     const lineCount = document.getElementById('lineCount');
     const textValidation = document.getElementById('textValidation');
-    const convertBtn = document.getElementById('convertBtn');
+    const convertBtnText = document.getElementById('convertBtnText'); // Nouveau bouton spécifique
 
     if (!textInput) return;
 
@@ -482,31 +490,29 @@ function updateTextStats() {
     if (lineCount) lineCount.textContent = lines;
 
     // Validation et gestion de l'affichage du bouton de conversion
-    if (textValidation && convertBtn) {
+    if (textValidation && convertBtnText) {
         if (text.trim() === '') {
-            textValidation.textContent = '';
-            convertBtn.style.display = 'none'; // Masquer le bouton si pas de texte
+            textValidation.innerHTML = '';
+            convertBtnText.style.display = 'none'; // Masquer le bouton si pas de texte
         } else {
             const format = detectMT103Format(text);
             const isValid = format.includes('Standard') || format.includes('Simplifié');
 
             if (isValid) {
-                textValidation.innerHTML = '✓ Format MT103 détecté';
-                textValidation.style.color = '#4caf50';
+                textValidation.innerHTML = '<span style="color: #4caf50; font-weight: 600;">✓ Format MT103 détecté</span>';
 
                 // Afficher le bouton de conversion avec une animation
-                convertBtn.style.display = 'inline-block';
-                convertBtn.disabled = false;
-                convertBtn.classList.add('btn-appear');
+                convertBtnText.style.display = 'inline-block';
+                convertBtnText.disabled = false;
+                convertBtnText.classList.add('btn-appear');
 
                 // Retirer la classe d'animation après l'animation
                 setTimeout(() => {
-                    convertBtn.classList.remove('btn-appear');
+                    convertBtnText.classList.remove('btn-appear');
                 }, 300);
             } else {
-                textValidation.innerHTML = '⚠️ Format non reconnu';
-                textValidation.style.color = '#ff9800';
-                convertBtn.style.display = 'none'; // Masquer le bouton si format invalide
+                textValidation.innerHTML = '<span style="color: #ff9800; font-weight: 600;">⚠️ Format MT103 non reconnu</span>';
+                convertBtnText.style.display = 'none'; // Masquer le bouton si format invalide
             }
         }
     }

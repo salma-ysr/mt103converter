@@ -9,7 +9,9 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.xml.XMLConstants;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
@@ -379,97 +381,77 @@ public class Validator {
     }
 
     /**
-     * Valide la structure des blocs dans un message MT103
-     * Vérifie que chaque bloc est correctement encadré par des accolades
-     * et que la structure générale est respectée
+     * Nouvelle validation stricte de la structure des blocs MT103
+     * Vérifie la présence des blocs obligatoires 1, 2, 4 et 5 (le bloc 3 est optionnel)
      */
-    private ErrorCall validateMT103BlockStructure(String raw) {
+    private ErrorCall validateMT103BlockStructure(String rawMessage) {
         ErrorCall errors = new ErrorCall();
 
-        // Supprimer les espaces et retours à la ligne pour une analyse plus précise
-        String cleanRaw = raw.replaceAll("\\s+", "");
+        try {
+            // Extraire les blocs du message
+            Map<String, String> blocks = extractBlocksFromMessage(rawMessage);
 
-        // Vérifier que le message commence et se termine par des accolades
-        if (!cleanRaw.startsWith("{") || !cleanRaw.endsWith("}")) {
-            errors.addError("Erreur de structure : Le message MT103 doit commencer par '{' et se terminer par '}'");
-            return errors;
-        }
+            // Vérifier les blocs obligatoires : 1, 2, 4, 5 (pas 3)
+            String[] mandatoryBlocks = {"1", "2", "4", "5"};
 
-        // Vérifier l'équilibre des accolades
-        int openCount = 0;
-        int closeCount = 0;
-        for (char c : cleanRaw.toCharArray()) {
-            if (c == '{') openCount++;
-            if (c == '}') closeCount++;
-        }
-        if (openCount != closeCount) {
-            errors.addError("Erreur de structure : Nombre d'accolades ouvrantes (" + openCount +
-                          ") et fermantes (" + closeCount + ") non équilibré");
-        }
-
-        // Extraire et valider les blocs principaux
-        List<String> blocks = extractMT103Blocks(cleanRaw);
-
-        if (blocks.isEmpty()) {
-            errors.addError("Erreur de structure : Aucun bloc MT103 valide détecté");
-            return errors;
-        }
-
-        // Vérifier la présence des blocs obligatoires (ignorer le bloc 5)
-        boolean hasBlock1 = false, hasBlock2 = false, hasBlock4 = false;
-
-        for (String block : blocks) {
-            if (block.startsWith("{1:")) hasBlock1 = true;
-            else if (block.startsWith("{2:")) hasBlock2 = true;
-            else if (block.startsWith("{4:")) hasBlock4 = true;
-            // Bloc 5 ignoré - pas obligatoire
-        }
-
-        if (!hasBlock1) errors.addError("Erreur de structure : Bloc {1: (Basic Header) manquant");
-        if (!hasBlock2) errors.addError("Erreur de structure : Bloc {2: (Application Header) manquant");
-        if (!hasBlock4) errors.addError("Erreur de structure : Bloc {4: (Text Block) manquant");
-        // Bloc {5: (Trailer) ignoré dans la validation
-
-        // Vérifier la structure interne du bloc 4 (le plus important)
-        if (hasBlock4) {
-            String block4 = getBlockContent(cleanRaw, "{4:");
-            if (block4 != null && !block4.isEmpty()) {
-                validateBlock4Structure(block4, errors);
+            for (String blockNumber : mandatoryBlocks) {
+                if (!blocks.containsKey(blockNumber) || blocks.get(blockNumber).trim().isEmpty()) {
+                    errors.addError("Erreur : Le bloc obligatoire {" + blockNumber + ":...} est manquant dans le message MT103");
+                    logger.warn("Missing mandatory block {}", blockNumber);
+                }
             }
+
+            // Log des blocs trouvés pour debug
+            logger.debug("Blocs détectés dans le message MT103: {}", blocks.keySet());
+
+        } catch (Exception e) {
+            errors.addError("Erreur : Impossible de parser la structure des blocs MT103 - " + e.getMessage());
+            logger.error("Erreur lors de l'analyse des blocs MT103: {}", e.getMessage());
         }
 
         return errors;
     }
 
     /**
-     * Extrait tous les blocs MT103 du message brut
+     * Extrait les blocs d'un message MT103
      */
-    private List<String> extractMT103Blocks(String cleanRaw) {
-        List<String> blocks = new ArrayList<>();
-        int index = 0;
+    private Map<String, String> extractBlocksFromMessage(String rawMessage) {
+        Map<String, String> blocks = new HashMap<>();
 
-        while (index < cleanRaw.length()) {
-            int openBrace = cleanRaw.indexOf('{', index);
-            if (openBrace == -1) break;
+        // Nettoyer le message
+        String cleanMessage = rawMessage.replaceAll("\\s+", " ").trim();
 
-            // Trouver l'accolade fermante correspondante
-            int braceCount = 1;
-            int closeBrace = openBrace + 1;
+        // Trouver tous les blocs {X:...}
+        int pos = 0;
+        while (pos < cleanMessage.length()) {
+            if (cleanMessage.charAt(pos) == '{') {
+                int colonPos = cleanMessage.indexOf(':', pos);
+                if (colonPos > pos + 1) {
+                    String blockNumber = cleanMessage.substring(pos + 1, colonPos);
 
-            while (closeBrace < cleanRaw.length() && braceCount > 0) {
-                char c = cleanRaw.charAt(closeBrace);
-                if (c == '{') braceCount++;
-                else if (c == '}') braceCount--;
-                closeBrace++;
-            }
+                    // Trouver la fin du bloc en comptant les accolades
+                    int braceCount = 1;
+                    int endPos = colonPos + 1;
+                    while (endPos < cleanMessage.length() && braceCount > 0) {
+                        if (cleanMessage.charAt(endPos) == '{') {
+                            braceCount++;
+                        } else if (cleanMessage.charAt(endPos) == '}') {
+                            braceCount--;
+                        }
+                        endPos++;
+                    }
 
-            if (braceCount == 0) {
-                String block = cleanRaw.substring(openBrace, closeBrace);
-                blocks.add(block);
-                index = closeBrace;
+                    if (braceCount == 0) {
+                        String blockContent = cleanMessage.substring(colonPos + 1, endPos - 1);
+                        blocks.put(blockNumber, blockContent);
+                    }
+
+                    pos = endPos;
+                } else {
+                    pos++;
+                }
             } else {
-                // Accolade fermante manquante
-                break;
+                pos++;
             }
         }
 
