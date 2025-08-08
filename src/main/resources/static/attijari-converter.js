@@ -470,6 +470,7 @@ function updateTextStats() {
     const charCount = document.getElementById('charCount');
     const lineCount = document.getElementById('lineCount');
     const textValidation = document.getElementById('textValidation');
+    const convertBtn = document.getElementById('convertBtn');
 
     if (!textInput) return;
 
@@ -480,15 +481,33 @@ function updateTextStats() {
     if (charCount) charCount.textContent = chars;
     if (lineCount) lineCount.textContent = lines;
 
-    // Validation basique
-    if (textValidation) {
+    // Validation et gestion de l'affichage du bouton de conversion
+    if (textValidation && convertBtn) {
         if (text.trim() === '') {
             textValidation.textContent = '';
+            convertBtn.style.display = 'none'; // Masquer le bouton si pas de texte
         } else {
             const format = detectMT103Format(text);
             const isValid = format.includes('Standard') || format.includes('Simplifié');
-            textValidation.textContent = isValid ? '✓ Format MT103 détecté' : '⚠️ Format non reconnu';
-            textValidation.style.color = isValid ? '#4caf50' : '#ff9800';
+
+            if (isValid) {
+                textValidation.innerHTML = '✓ Format MT103 détecté';
+                textValidation.style.color = '#4caf50';
+
+                // Afficher le bouton de conversion avec une animation
+                convertBtn.style.display = 'inline-block';
+                convertBtn.disabled = false;
+                convertBtn.classList.add('btn-appear');
+
+                // Retirer la classe d'animation après l'animation
+                setTimeout(() => {
+                    convertBtn.classList.remove('btn-appear');
+                }, 300);
+            } else {
+                textValidation.innerHTML = '⚠️ Format non reconnu';
+                textValidation.style.color = '#ff9800';
+                convertBtn.style.display = 'none'; // Masquer le bouton si format invalide
+            }
         }
     }
 }

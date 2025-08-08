@@ -615,6 +615,22 @@
             font-size: 0.9rem;
         }
 
+        /* === ANIMATION POUR LE BOUTON DE CONVERSION === */
+        .btn-appear {
+            animation: buttonAppear 0.3s ease-out;
+        }
+
+        @keyframes buttonAppear {
+            0% {
+                opacity: 0;
+                transform: translateY(10px) scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
         /* === NEW STYLES FOR MODERN UPLOAD SECTION === */
         .modern-upload-container {
             background: var(--bg-surface);
@@ -1108,7 +1124,7 @@ Format MT103 attendu : {1:...} {2:...} {4: :20:... :32A:... :50K:... :59:... :70
                 </div>
 
                 <div style="margin-top: 1.5rem; text-align: center;">
-                    <button id="convertBtn" class="attj-btn" disabled>
+                    <button id="convertBtn" class="attj-btn" style="display: none;">
                         🔄 Convertir vers PACS008
                     </button>
                 </div>

@@ -713,13 +713,33 @@
         });
 
         function loadUserInfo() {
-            // This would typically fetch from an API
-            const userName = 'Utilisateur Connecté'; // Replace with actual user data
-            const initials = userName.split(' ').map(n => n[0]).join('').toUpperCase();
+            // Récupérer les informations de l'utilisateur connecté depuis l'API
+            fetch('/api/user/info')
+                .then(response => response.json())
+                .then(userInfo => {
+                    const displayName = userInfo.displayName || userInfo.username || 'Utilisateur';
+                    const initials = displayName.split(' ')
+                        .map(n => n.charAt(0))
+                        .join('')
+                        .toUpperCase()
+                        .substring(0, 2); // Limiter à 2 caractères max
 
-            document.getElementById('userAvatar').textContent = initials;
-            document.getElementById('userName').textContent = userName;
-            document.getElementById('lastLogin').textContent = `Dernière connexion: ${new Date().toLocaleString('fr-FR')}`;
+                    // Mettre à jour l'avatar avec les initiales
+                    document.getElementById('userAvatar').textContent = initials;
+
+                    // Mettre à jour le nom d'utilisateur affiché
+                    document.getElementById('userName').textContent = displayName;
+
+                    // Mettre à jour la dernière connexion
+                    document.getElementById('lastLogin').textContent = `Dernière connexion: ${new Date().toLocaleString('fr-FR')}`;
+                })
+                .catch(error => {
+                    console.error('Erreur lors du chargement des informations utilisateur:', error);
+                    // Valeurs par défaut en cas d'erreur
+                    document.getElementById('userAvatar').textContent = 'U';
+                    document.getElementById('userName').textContent = 'Utilisateur';
+                    document.getElementById('lastLogin').textContent = 'Dernière connexion: -';
+                });
         }
 
         function loadDashboardData() {

@@ -181,6 +181,47 @@ public class DashboardController {
         return activities;
     }
 
+    /**
+     * API pour récupérer les informations de l'utilisateur connecté
+     */
+    @GetMapping("/api/user/info")
+    public Map<String, Object> getUserInfo() {
+        Map<String, Object> userInfo = new HashMap<>();
+
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                String username = getCurrentUsername();
+                userInfo.put("username", username);
+
+                // Si c'est un utilisateur OIDC (Keycloak), récupérer plus d'informations
+                if (authentication.getPrincipal() instanceof OidcUser) {
+                    OidcUser oidcUser = (OidcUser) authentication.getPrincipal();
+                    userInfo.put("displayName", oidcUser.getFullName() != null ? oidcUser.getFullName() : username);
+                    userInfo.put("email", oidcUser.getEmail());
+                    userInfo.put("givenName", oidcUser.getGivenName());
+                    userInfo.put("familyName", oidcUser.getFamilyName());
+                } else {
+                    userInfo.put("displayName", username);
+                }
+
+                userInfo.put("authenticated", true);
+                logger.debug("Informations utilisateur récupérées pour: {}", username);
+            } else {
+                userInfo.put("username", "anonymous");
+                userInfo.put("displayName", "Utilisateur");
+                userInfo.put("authenticated", false);
+            }
+        } catch (Exception e) {
+            logger.error("Erreur lors de la récupération des informations utilisateur: {}", e.getMessage());
+            userInfo.put("username", "anonymous");
+            userInfo.put("displayName", "Utilisateur");
+            userInfo.put("authenticated", false);
+        }
+
+        return userInfo;
+    }
+
     // === Méthodes pour récupérer l'utilisateur connecté ===
 
     private String getCurrentUsername() {
