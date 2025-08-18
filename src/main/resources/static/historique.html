@@ -322,30 +322,43 @@
             min-width: 100px;
         }
 
-        .attj-history-table th:nth-child(2), /* Montant */
+        .attj-history-table th:nth-child(2), /* Type */
         .attj-history-table td:nth-child(2) {
+            width: 10%;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .attj-history-table th:nth-child(3), /* Montant */
+        .attj-history-table td:nth-child(3) {
             width: 10%;
             min-width: 80px;
             text-align: right;
         }
 
-        .attj-history-table th:nth-child(3), /* Statut */
-        .attj-history-table td:nth-child(3) {
+        .attj-history-table th:nth-child(4), /* Statut */
+        .attj-history-table td:nth-child(4) {
             width: 8%;
             min-width: 70px;
             text-align: center;
         }
 
-        .attj-history-table th:nth-child(4), /* Fichier */
-        .attj-history-table td:nth-child(4) {
+        .attj-history-table th:nth-child(5), /* Fichier Entrée */
+        .attj-history-table td:nth-child(5) {
             width: 15%;
             min-width: 120px;
         }
 
-        .attj-history-table th:nth-child(5), /* Actions */
-        .attj-history-table td:nth-child(5) {
-            width: 55%;
-            min-width: 300px;
+        .attj-history-table th:nth-child(6), /* Fichier Sortie */
+        .attj-history-table td:nth-child(6) {
+            width: 15%;
+            min-width: 120px;
+        }
+
+        .attj-history-table th:nth-child(7), /* Actions */
+        .attj-history-table td:nth-child(7) {
+            width: 30%;
+            min-width: 200px;
         }
 
         /* Statuts styles */
@@ -387,8 +400,8 @@
         }
 
         /* Actions column buttons alignment */
-        .attj-history-table td:nth-child(5) .attj-btn,
-        .attj-history-table td:nth-child(6) .attj-btn {
+        .attj-history-table td:nth-child(7) .attj-btn,
+        .attj-history-table td:nth-child(8) .attj-btn {
             display: inline-block;
             margin: 0.1rem;
         }
@@ -586,45 +599,15 @@
     <!-- Mobile Menu Toggle -->
     <button class="menu-toggle" id="menuToggle">☰</button>
 
-    <!-- Sidebar Navigation -->
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <img src="/LogoAttijari.png" alt="Attijariwafa Bank" class="sidebar-logo">
-            <h3 class="sidebar-title">MT103 Converter</h3>
-        </div>
-        <nav class="sidebar-nav">
-            <div class="nav-item">
-                <a href="/dashboard" class="nav-link">
-                    <span class="nav-icon">📊</span>
-                    Dashboard
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="/conversion" class="nav-link">
-                    <span class="nav-icon">🔄</span>
-                    Conversion MT103
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="/historique" class="nav-link active">
-                    <span class="nav-icon">📋</span>
-                    Historique
-                </a>
-            </div>
-        </nav>
-        <div class="logout-section">
-            <button class="logout-btn" onclick="window.location.href='/logout'">
-                🚪 Déconnexion
-            </button>
-        </div>
-    </div>
+    <!-- Sidebar Navigation (normalized) -->
+    <div id="sidebarContainer"></div>
 
     <div class="main-content">
         <!-- Page Header -->
         <div class="page-header">
             <div>
                 <h1 class="page-title">Historique</h1>
-                <p class="page-subtitle">Historique des conversions MT103 vers PACS008</p>
+                <p class="page-subtitle">Historique des conversions MT103 ↔ PACS008</p>
             </div>
             <div class="header-actions">
                 <button id="clearHistory" class="attj-btn danger">🗑️ Effacer l'historique</button>
@@ -647,21 +630,22 @@
             <div class="table-container">
                 <table class="attj-history-table">
                     <thead>
-                        <tr>
-                            <th>Date Conversion</th>
-                            <th>Montant</th>
-                            <th>Statut</th>
-                            <th>File In (MT103)</th>
-                            <th>File Out (PACS008)</th>
-                            <th>Actions</th>
-                        </tr>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Montant</th>
+                        <th>Statut</th>
+                        <th>Fichier Entrée</th>
+                        <th>Fichier Sortie</th>
+                        <th>Actions</th>
+                    </tr>
                     </thead>
                     <tbody id="historyTableBody">
-                        <tr>
-                            <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-                                Chargement...
-                            </td>
-                        </tr>
+                    <tr>
+                        <td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);">
+                            Chargement...
+                        </td>
+                    </tr>
                     </tbody>
                 </table>
             </div>
@@ -670,6 +654,11 @@
         </div>
     </div>
 
+    <script src="/sidebar.js"></script>
+    <script>
+        // Inject unified sidebar and set active route
+        injectSidebar('/historique');
+    </script>
     <script>
         let currentPage = 0;
         const pageSize = 10;
@@ -687,47 +676,54 @@
                 })
                 .catch(error => {
                     console.error('Erreur:', error);
-                    showError('Erreur lors du chargement de l\'historique');
+                    alert('Erreur chargement historique');
                 });
         }
 
         function renderHistory(data) {
             const tbody = document.getElementById('historyTableBody');
             if (!data.conversions || data.conversions.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Aucune conversion trouvée</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Aucune conversion</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = data.conversions.map(item => `
-                <tr>
-                    <td>${item.date}</td>
-                    <td><strong>${item.amount || 'N/A'} ${item.currency || ''}</strong></td>
-                    <td class="${item.status === 'Succès' ? 'attj-status-success' : 'attj-status-error'}">
-                        ${item.status}
-                    </td>
-                    <td>
-                        <div>📄 ${item.fileName}</div>
-                        <button class="attj-btn" style="font-size:0.8rem; padding:0.3rem 0.8rem; margin-top:0.5rem;"
-                                onclick="downloadFile('${item.id}', 'mt103', '${item.fileName}')">
-                            📥 Télécharger MT103
-                        </button>
-                    </td>
-                    <td>
-                        ${item.status === 'Succès' ? `
-                            <div>📄 PACS008_${item.id.substring(0, 8)}.xml</div>
-                            <button class="attj-btn" style="font-size:0.8rem; padding:0.3rem 0.8rem; margin-top:0.5rem;"
-                                    onclick="downloadFile('${item.id}', 'pacs008', 'PACS008_${item.id.substring(0, 8)}.xml')">
-                                📥 Télécharger PACS008
+            tbody.innerHTML = data.conversions.map(item => {
+                const inLabel = item.direction === 'forward' ? 'MT103' : 'PACS008';
+                const outLabel = item.direction === 'forward' ? 'PACS008' : 'MT103';
+                const inType = item.direction === 'forward' ? 'mt103' : 'pacs008';
+                const outType = item.direction === 'forward' ? 'pacs008' : 'mt103';
+                return `
+                    <tr>
+                        <td>${item.date || '-'}</td>
+                        <td>${item.type || '-'}</td>
+                        <td><strong>${item.amount || 'N/A'} ${item.currency || ''}</strong></td>
+                        <td class="${item.status === 'Succès' ? 'attj-status-success' : 'attj-status-error'}">
+                            ${item.status}
+                        </td>
+                        <td>
+                            <div>📄 ${item.fileNameIn || '-'}</div>
+                            <button class="attj-btn" style="font-size:0.7rem;padding:0.25rem 0.6rem;margin-top:0.3rem;"
+                                    onclick="downloadHist('${item.id}','${inType}','${item.fileNameIn || ''}')">
+                                📥 ${inLabel}
                             </button>
-                        ` : '<span style="color:#666;">Pas de fichier de sortie (erreur)</span>'}
-                    </td>
-                    <td>
-                        <button class="attj-btn" style="background:#d45f3b;" onclick="deleteConversion('${item.id}')">
-                            🗑️ Supprimer
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
+                        </td>
+                        <td>
+                            ${item.fileNameOut ? `
+                                <div>📄 ${item.fileNameOut}</div>
+                                <button class='attj-btn' style='font-size:0.7rem;padding:0.25rem 0.6rem;margin-top:0.3rem;'
+                                        onclick="downloadHist('${item.id}','${outType}','${item.fileNameOut}')">
+                                    📥 ${outLabel}
+                                </button>` : '<span style="color:#666;">—</span>'}
+                        </td>
+                        <td>
+                            <button class="attj-btn" style="background:#d45f3b;font-size:0.7rem;padding:0.25rem 0.6rem;"
+                                    onclick="deleteConversion('${item.id}')">
+                                🗑️
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
 
             renderPagination(data.currentPage, data.totalPages);
         }
@@ -739,33 +735,26 @@
                 return;
             }
 
-            let html = '';
-
-            // Bouton Précédent
-            html += `
+            let html = `
                 <button class="pagination-nav" ${currentPage === 0 ? 'disabled' : ''}
                         onclick="${currentPage > 0 ? `loadHistory(${currentPage - 1})` : ''}">
-                    <span>←</span> Précédent
+                    <span>←</span>
                 </button>
             `;
 
-            // Afficher tous les numéros de pages
             for (let i = 0; i < totalPages; i++) {
                 html += `
-                    <button
-                        ${i === currentPage ? 'class="active"' : ''}
-                        onclick="loadHistory(${i})"
-                    >
+                    <button ${i === currentPage ? 'class="active"' : ''}
+                            onclick="loadHistory(${i})">
                         ${i + 1}
                     </button>
                 `;
             }
 
-            // Bouton Suivant
             html += `
                 <button class="pagination-nav" ${currentPage === totalPages - 1 ? 'disabled' : ''}
                         onclick="${currentPage < totalPages - 1 ? `loadHistory(${currentPage + 1})` : ''}">
-                    Suivant <span>→</span>
+                    <span>→</span>
                 </button>
             `;
 
@@ -773,24 +762,24 @@
         }
 
         function updateStats(data) {
-            document.getElementById('totalConversions').textContent = data.totalElements || 0;
-            document.getElementById('lastUpdate').textContent = new Date().toLocaleString('fr-FR');
+            document.getElementById('totalConversions') && (document.getElementById('totalConversions').textContent = data.totalElements || 0);
+            document.getElementById('lastUpdate') && (document.getElementById('lastUpdate').textContent = new Date().toLocaleString('fr-FR'));
         }
 
         function deleteConversion(id) {
-            if (confirm('Voulez-vous vraiment supprimer cette conversion ?')) {
+            if (confirm('Supprimer cette conversion ?')) {
                 fetch(`/api/historique/delete?id=${id}`, { method: 'DELETE' })
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
                             loadHistory(currentPage);
                         } else {
-                            showError('Erreur lors de la suppression');
+                            alert('Suppression impossible');
                         }
                     })
                     .catch(error => {
                         console.error('Erreur:', error);
-                        showError('Erreur lors de la suppression');
+                        alert('Erreur lors de la suppression');
                     });
             }
         }
@@ -803,48 +792,38 @@
                         if (data.success) {
                             loadHistory(0);
                         } else {
-                            showError('Erreur lors de l\'effacement de l\'historique');
+                            alert('Erreur lors de l\'effacement de l\'historique');
                         }
                     })
                     .catch(error => {
                         console.error('Erreur:', error);
-                        showError('Erreur lors de l\'effacement de l\'historique');
+                        alert('Erreur lors de l\'effacement de l\'historique');
                     });
             }
         };
 
-        function showError(message) {
-            alert(message);
-        }
-
-        // Fonction pour télécharger un fichier
-        function downloadFile(conversionId, fileType, fileName) {
-            fetch(`/api/historique/download?id=${conversionId}&type=${fileType}`)
+        function downloadHist(id, type, fileName) {
+            fetch(`/api/historique/download?id=${id}&type=${type}`)
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error('Erreur de téléchargement');
+                        throw new Error('download');
                     }
                     return response.blob();
                 })
                 .then(blob => {
-                    const url = window.URL.createObjectURL(blob);
+                    const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
-                    a.style.display = 'none';
                     a.href = url;
-                    a.download = fileName;
+                    a.download = fileName || `${type}_${id}.dat`;
                     document.body.appendChild(a);
                     a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
+                    a.remove();
+                    URL.revokeObjectURL(url);
                 })
-                .catch(error => {
-                    console.error('Erreur:', error);
-                    showError('Erreur lors du téléchargement du fichier');
-                });
+                .catch(() => alert('Erreur téléchargement'));
         }
 
-        // Auto-refresh toutes les 5 minutes
-        setInterval(() => loadHistory(currentPage), 5 * 60 * 1000);
+        setInterval(() => loadHistory(currentPage), 300000);
     </script>
 </body>
 </html>

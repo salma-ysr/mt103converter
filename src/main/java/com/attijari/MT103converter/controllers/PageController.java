@@ -26,11 +26,19 @@ public class PageController {
     }
 
     /**
-     * Page de conversion
+     * Page de conversion MT103 -> PACS008
      */
     @GetMapping("/conversion")
     public String conversion() {
         return "index.html";
+    }
+
+    /**
+     * Page de conversion inverse PACS008 -> MT103
+     */
+    @GetMapping("/conversion-inverse")
+    public String conversionInverse() {
+        return "conversion-inverse.html"; // nouvelle page
     }
 
     /**

@@ -548,38 +548,8 @@
     <!-- Mobile Menu Toggle -->
     <button class="menu-toggle" id="menuToggle">☰</button>
 
-    <!-- Sidebar Navigation -->
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <img src="/LogoAttijari.png" alt="Attijariwafa Bank" class="sidebar-logo">
-            <h3 class="sidebar-title">MT103 Converter</h3>
-        </div>
-        <nav class="sidebar-nav">
-            <div class="nav-item">
-                <a href="/dashboard" class="nav-link active">
-                    <span class="nav-icon">📊</span>
-                    Dashboard
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="/conversion" class="nav-link">
-                    <span class="nav-icon">🔄</span>
-                    Conversion MT103
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="/historique" class="nav-link">
-                    <span class="nav-icon">📋</span>
-                    Historique
-                </a>
-            </div>
-        </nav>
-        <div class="logout-section">
-            <button class="logout-btn" onclick="window.location.href='/logout'">
-                🚪 Déconnexion
-            </button>
-        </div>
-    </div>
+    <!-- Sidebar Navigation (normalized) -->
+    <div id="sidebarContainer"></div>
 
     <!-- Main Content -->
     <div class="main-content">
@@ -686,24 +656,11 @@
         </section>
     </div>
 
+    <script src="/sidebar.js"></script>
     <script>
-        // Mobile menu toggle
-        document.getElementById('menuToggle').addEventListener('click', function() {
-            document.getElementById('sidebar').classList.toggle('active');
-        });
-
-        // Close sidebar when clicking outside on mobile
-        document.addEventListener('click', function(event) {
-            if (window.innerWidth <= 768) {
-                const sidebar = document.getElementById('sidebar');
-                const menuToggle = document.getElementById('menuToggle');
-
-                if (!sidebar.contains(event.target) && !menuToggle.contains(event.target)) {
-                    sidebar.classList.remove('active');
-                }
-            }
-        });
-
+        injectSidebar('/dashboard');
+    </script>
+    <script>
         // Dashboard initialization
         document.addEventListener('DOMContentLoaded', function() {
             loadDashboardData();
@@ -712,56 +669,137 @@
             loadRecentActivity();
         });
 
-        function loadUserInfo() {
-            // Récupérer les informations de l'utilisateur connecté depuis l'API
-            fetch('/api/user/info')
-                .then(response => response.json())
-                .then(userInfo => {
-                    const displayName = userInfo.displayName || userInfo.username || 'Utilisateur';
-                    const initials = displayName.split(' ')
-                        .map(n => n.charAt(0))
-                        .join('')
-                        .toUpperCase()
-                        .substring(0, 2); // Limiter à 2 caractères max
-
-                    // Mettre à jour l'avatar avec les initiales
-                    document.getElementById('userAvatar').textContent = initials;
-
-                    // Mettre à jour le nom d'utilisateur affiché
-                    document.getElementById('userName').textContent = displayName;
-
-                    // Mettre à jour la dernière connexion
-                    document.getElementById('lastLogin').textContent = `Dernière connexion: ${new Date().toLocaleString('fr-FR')}`;
-                })
-                .catch(error => {
-                    console.error('Erreur lors du chargement des informations utilisateur:', error);
-                    // Valeurs par défaut en cas d'erreur
-                    document.getElementById('userAvatar').textContent = 'U';
-                    document.getElementById('userName').textContent = 'Utilisateur';
-                    document.getElementById('lastLogin').textContent = 'Dernière connexion: -';
-                });
-        }
-
         function loadDashboardData() {
+            console.log('🔄 Chargement des données dashboard...');
             // Add loading state
             const statCards = document.querySelectorAll('.stat-card');
             statCards.forEach(card => card.classList.add('loading'));
 
             fetch('/api/dashboard/stats')
-                .then(response => response.json())
+                .then(response => {
+                    console.log('📊 Réponse API stats:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    document.getElementById('totalConversions').textContent = data.totalConversions || 0;
-                    document.getElementById('todayConversions').textContent = data.todayConversions || 0;
-                    document.getElementById('successRate').textContent = `${(data.successRate || 0).toFixed(2)}%`;
-                    document.getElementById('lastUpdate').textContent = new Date().toLocaleString('fr-FR');
+                    console.log('✅ Données reçues:', data);
+
+                    // Vérifier si les données sont valides
+                    const totalConversions = data.totalConversions || 0;
+                    const todayConversions = data.todayConversions || 0;
+                    const successRate = data.successRate || 0;
+
+                    document.getElementById('totalConversions').textContent = totalConversions;
+                    document.getElementById('todayConversions').textContent = todayConversions;
+                    document.getElementById('successRate').textContent = `${successRate.toFixed(2)}%`;
+                    document.getElementById('lastUpdate').textContent = data.lastUpdate || new Date().toLocaleString('fr-FR');
+
+                    // Mettre à jour les trends réels depuis le backend
+                    updateRealTrends(data);
+
+                    // Afficher un message si aucune donnée
+                    if (totalConversions === 0) {
+                        console.log('ℹ️ Aucune conversion trouvée pour cet utilisateur');
+                        showEmptyDataMessage();
+                    }
 
                     // Remove loading state
                     statCards.forEach(card => card.classList.remove('loading'));
                 })
                 .catch(error => {
-                    console.error('Erreur:', error);
+                    console.error('❌ Erreur API dashboard:', error);
+
+                    // Afficher des valeurs par défaut
+                    document.getElementById('totalConversions').textContent = '0';
+                    document.getElementById('todayConversions').textContent = '0';
+                    document.getElementById('successRate').textContent = '0.00%';
+                    document.getElementById('lastUpdate').textContent = new Date().toLocaleString('fr-FR');
+
+                    // Afficher un message d'erreur visuel
+                    showErrorMessage('Impossible de charger les statistiques. Vérifiez que l\'application backend est démarrée.');
+
                     // Remove loading state even on error
                     statCards.forEach(card => card.classList.remove('loading'));
+                });
+        }
+
+        // Nouvelle fonction pour mettre à jour les trends réels
+        function updateRealTrends(data) {
+            console.log('📈 Mise à jour des trends avec les données:', data);
+
+            // Mettre à jour la tendance totale
+            const totalTrendElement = document.getElementById('totalTrend');
+            if (totalTrendElement && data.totalTrend !== undefined) {
+                totalTrendElement.textContent = data.totalTrend;
+                totalTrendElement.className = `stat-trend ${data.totalTrendClass || 'trend-stable'}`;
+                console.log('✅ Total trend mis à jour:', data.totalTrend, data.totalTrendClass);
+            } else if (totalTrendElement) {
+                // Fallback si pas de données
+                totalTrendElement.textContent = 'Stable';
+                totalTrendElement.className = 'stat-trend trend-stable';
+                console.log('⚠️ Pas de données totalTrend, utilisation de "Stable"');
+            }
+
+            // Mettre à jour la tendance du taux de succès
+            const successTrendElement = document.getElementById('successTrend');
+            if (successTrendElement && data.successTrend !== undefined) {
+                successTrendElement.textContent = data.successTrend;
+                successTrendElement.className = `stat-trend ${data.successTrendClass || 'trend-stable'}`;
+                console.log('✅ Success trend mis à jour:', data.successTrend, data.successTrendClass);
+            } else if (successTrendElement) {
+                // Fallback si pas de données
+                successTrendElement.textContent = 'Stable';
+                successTrendElement.className = 'stat-trend trend-stable';
+                console.log('⚠️ Pas de données successTrend, utilisation de "Stable"');
+            }
+
+            // Mettre à jour la tendance d'aujourd'hui
+            const todayTrendElement = document.getElementById('todayTrend');
+            if (todayTrendElement && data.todayTrend !== undefined) {
+                todayTrendElement.textContent = data.todayTrend;
+                todayTrendElement.className = `stat-trend ${data.todayTrendClass || 'trend-stable'}`;
+                console.log('✅ Today trend mis à jour:', data.todayTrend, data.todayTrendClass);
+            } else if (todayTrendElement) {
+                // Fallback si pas de données
+                todayTrendElement.textContent = 'Stable';
+                todayTrendElement.className = 'stat-trend trend-stable';
+                console.log('⚠️ Pas de données todayTrend, utilisation de "Stable"');
+            }
+
+            console.log('📈 Tous les trends ont été traités');
+        }
+
+        function loadUserInfo() {
+            console.log('👤 Chargement des informations utilisateur...');
+            fetch('/api/user/info')
+                .then(response => {
+                    console.log('👤 Réponse API user:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(userInfo => {
+                    console.log('✅ Info utilisateur reçues:', userInfo);
+                    const displayName = userInfo.displayName || userInfo.username || 'Utilisateur';
+                    const initials = displayName.split(' ')
+                        .map(n => n.charAt(0))
+                        .join('')
+                        .toUpperCase()
+                        .substring(0, 2);
+
+                    document.getElementById('userAvatar').textContent = initials;
+                    document.getElementById('userName').textContent = displayName;
+                    document.getElementById('lastLogin').textContent = `Dernière connexion: ${new Date().toLocaleString('fr-FR')}`;
+                })
+                .catch(error => {
+                    console.error('❌ Erreur info utilisateur:', error);
+                    // Valeurs par défaut en cas d'erreur
+                    document.getElementById('userAvatar').textContent = 'U';
+                    document.getElementById('userName').textContent = 'Utilisateur';
+                    document.getElementById('lastLogin').textContent = 'Dernière connexion: -';
                 });
         }
 
@@ -771,22 +809,79 @@
         }
 
         function loadTimelineChart() {
+            console.log('📈 Chargement du graphique temporel...');
             fetch('/api/dashboard/chart-data')
-                .then(response => response.json())
-                .then(data => createTimelineChart(data))
+                .then(response => {
+                    console.log('📈 Réponse API chart:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('✅ Données chart reçues:', data);
+                    if (data && data.length > 0) {
+                        createTimelineChart(data);
+                    } else {
+                        console.log('ℹ️ Aucune donnée de graphique, utilisation des données de démonstration');
+                        createTimelineChart(generateMockTimelineData());
+                    }
+                })
                 .catch(error => {
-                    console.error('Erreur:', error);
+                    console.error('❌ Erreur chart:', error);
+                    console.log('🔄 Utilisation des données de démonstration');
                     createTimelineChart(generateMockTimelineData());
                 });
         }
 
         function loadPieChart() {
+            console.log('🥧 Chargement du graphique en camembert...');
             fetch('/api/dashboard/pie-data')
-                .then(response => response.json())
-                .then(data => createPieChart(data))
+                .then(response => {
+                    console.log('🥧 Réponse API pie:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('✅ Données pie reçues:', data);
+                    if (data && (data.success > 0 || data.errors > 0)) {
+                        createPieChart(data);
+                    } else {
+                        console.log('ℹ️ Aucune donnée pie, utilisation des données de démonstration');
+                        createPieChart({success: 5, errors: 2, total: 7});
+                    }
+                })
                 .catch(error => {
-                    console.error('Erreur:', error);
-                    createPieChart({success: 75, errors: 25});
+                    console.error('❌ Erreur pie chart:', error);
+                    console.log('🔄 Utilisation des données de démonstration');
+                    createPieChart({success: 5, errors: 2, total: 7});
+                });
+        }
+
+        function loadRecentActivity() {
+            console.log('⏰ Chargement de l\'activité récente...');
+            fetch('/api/dashboard/recent-activity')
+                .then(response => {
+                    console.log('⏰ Réponse API activity:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('✅ Activités reçues:', data);
+                    if (data && data.length > 0) {
+                        renderRecentActivity(data);
+                    } else {
+                        console.log('ℹ️ Aucune activité récente');
+                        showEmptyActivityMessage();
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Erreur activité:', error);
+                    showEmptyActivityMessage();
                 });
         }
 
@@ -873,19 +968,12 @@
             });
         }
 
-        function loadRecentActivity() {
-            fetch('/api/dashboard/recent-activity')
-                .then(response => response.json())
-                .then(data => renderRecentActivity(data))
-                .catch(error => {
-                    console.error('Erreur:', error);
-                    // Keep default mock data if API fails
-                });
-        }
-
         function renderRecentActivity(activities) {
             const container = document.getElementById('recentActivity');
-            if (!activities || activities.length === 0) return;
+            if (!activities || activities.length === 0) {
+                showEmptyActivityMessage();
+                return;
+            }
 
             container.innerHTML = activities.map(activity => `
                 <div class="activity-item">
@@ -899,6 +987,73 @@
                     <div class="activity-time">${activity.time}</div>
                 </div>
             `).join('');
+        }
+
+        // Fonctions utilitaires pour l'affichage des messages
+        function showErrorMessage(message) {
+            const existingError = document.querySelector('.dashboard-error-message');
+            if (existingError) existingError.remove();
+
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'dashboard-error-message';
+            errorDiv.style.cssText = `
+                background: rgba(244, 67, 54, 0.1);
+                border: 1px solid #f44336;
+                color: #f44336;
+                padding: 1rem;
+                border-radius: 8px;
+                margin: 1rem 0;
+                text-align: center;
+                font-weight: 500;
+            `;
+            errorDiv.innerHTML = `⚠️ ${message}`;
+
+            const statsSection = document.querySelector('.stats-section');
+            if (statsSection) {
+                statsSection.appendChild(errorDiv);
+            }
+        }
+
+        function showEmptyDataMessage() {
+            const existingMessage = document.querySelector('.dashboard-empty-message');
+            if (existingMessage) existingMessage.remove();
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'dashboard-empty-message';
+            messageDiv.style.cssText = `
+                background: rgba(255, 152, 0, 0.1);
+                border: 1px solid #ff9800;
+                color: #ff9800;
+                padding: 1rem;
+                border-radius: 8px;
+                margin: 1rem 0;
+                text-align: center;
+                font-weight: 500;
+            `;
+            messageDiv.innerHTML = `
+                📊 Aucune conversion n'a encore été effectuée.<br>
+                <small>Utilisez la page <a href="/conversion" style="color: #ffb300;">Conversion</a> pour commencer.</small>
+            `;
+
+            const statsSection = document.querySelector('.stats-section');
+            if (statsSection) {
+                statsSection.appendChild(messageDiv);
+            }
+        }
+
+        function showEmptyActivityMessage() {
+            const container = document.getElementById('recentActivity');
+            if (container) {
+                container.innerHTML = `
+                    <div class="activity-item" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                        <div style="font-size: 2rem; margin-bottom: 1rem;">📭</div>
+                        <div>Aucune activité récente</div>
+                        <div style="font-size: 0.9rem; margin-top: 0.5rem;">
+                            Les conversions apparaîtront ici une fois effectuées.
+                        </div>
+                    </div>
+                `;
+            }
         }
 
         function generateMockTimelineData() {

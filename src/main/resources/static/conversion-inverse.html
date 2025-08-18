@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Conversion PACS008 → MT103</title>
+  <link rel="stylesheet" href="/style-attijari.css" />
+  <script src="/sidebar.js"></script>
+  <style>
+    :root {
+      --primary-color: #ff9800;
+      --secondary-color: #ffb300;
+      --accent-color: #F4C204FF;
+      --bg-dark: #0f0f0f;
+      --bg-card: #1a1a1a;
+      --bg-surface: #222;
+      --text-primary: #ffffff;
+      --text-secondary: #cccccc;
+      --text-muted: #888888;
+      --border-color: #333333;
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      --shadow-hover: 0 8px 32px rgba(255, 179, 0, 0.2);
+      --radius: 12px;
+      --sidebar-width: 260px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;background:linear-gradient(135deg, var(--bg-dark) 0%, #1a1a1a 100%);color:var(--text-primary);min-height:100vh;overflow-x:hidden;}
+
+    /* === SIDEBAR (same look as other pages) === */
+    .sidebar {background:linear-gradient(180deg,#181818 0%,#0f0f0f 100%);color:var(--text-primary);width:var(--sidebar-width);position:fixed;top:0;bottom:0;left:0;padding:1.5rem;display:flex;flex-direction:column;gap:1rem;box-shadow:4px 0 20px rgba(0,0,0,.5);z-index:1000;transition:transform .3s ease;}
+    .sidebar-header{display:flex;align-items:center;gap:1rem;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid var(--border-color);}
+    .sidebar-logo{width:45px;height:45px;object-fit:cover;border-radius:8px;}
+    .sidebar-title{font-size:1.4rem;font-weight:700;margin:0;background:linear-gradient(90deg,var(--primary-color),var(--secondary-color));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .sidebar-nav{flex-grow:1;}
+    .nav-item{margin:.5rem 0;}
+    .nav-link{color:var(--text-secondary);text-decoration:none;font-size:1rem;font-weight:500;display:flex;align-items:center;gap:1rem;padding:.75rem 1rem;border-radius:8px;transition:all .3s ease;position:relative;overflow:hidden;}
+    .nav-link:before{content:'';position:absolute;left:0;top:0;height:100%;width:0;background:linear-gradient(90deg,var(--primary-color),transparent);transition:width .3s ease;z-index:-1;}
+    .nav-link:hover:before,.nav-link.active:before{width:100%;}
+    .nav-link:hover,.nav-link.active{color:var(--text-primary);background:rgba(255,152,0,.1);transform:translateX(5px);}
+    .nav-icon{font-size:1.2rem;min-width:20px;}
+    .logout-section{margin-top:auto;padding-top:1rem;border-top:1px solid var(--border-color);}
+    .logout-btn{background:linear-gradient(135deg,#d45f3b,#b71c1c);color:var(--text-primary);border:none;border-radius:8px;padding:.75rem 1rem;font-size:1rem;font-weight:600;cursor:pointer;width:100%;text-align:center;transition:all .3s ease;box-shadow:var(--shadow);}
+    .logout-btn:hover{background:linear-gradient(135deg,#b71c1c,#8b0000);transform:translateY(-2px);box-shadow:var(--shadow-hover);}
+
+    /* === MAIN CONTENT (aligned with other pages) === */
+    .main-content { margin-left: var(--sidebar-width); padding: 2rem; min-height: 100vh; transition: margin-left .3s ease; }
+    .page-header { margin-bottom: 2rem; text-align: center; }
+    .page-title { font-size: 2.5rem; font-weight: 700; background: linear-gradient(90deg, var(--primary-color), var(--secondary-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: .5rem; }
+    .page-subtitle { color: var(--text-secondary); font-size: 1.05rem; }
+
+    /* === CARD + CONTENT (match conversion page visual language) === */
+    .converter-card{background:var(--bg-card);border-radius:var(--radius);box-shadow:var(--shadow);padding:2rem;border:1px solid var(--border-color);position:relative;max-width:1000px;margin:0 auto;}
+    .converter-card:before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--primary-color),var(--secondary-color));}
+
+    .section-title{font-size:1.2rem;font-weight:600;margin:0 0 1rem;color:var(--text-primary);display:flex;align-items:center;gap:.5rem;}
+
+    .upload-area{border:2px dashed var(--border-color);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:.25s;background:var(--bg-surface);}
+    .upload-area:hover,.upload-area.dragover{border-color:var(--primary-color);background:rgba(255,152,0,.08);}
+
+    .file-input{display:none;}
+
+    textarea{width:100%;min-height:220px;background:#111;border:1px solid var(--border-color);border-radius:10px;padding:1rem;color:#fff;font-family:monospace;font-size:.95rem;resize:vertical;}
+    textarea:focus{outline:none;border-color:var(--primary-color);}
+
+    .flex{display:flex;gap:1rem;flex-wrap:wrap;}
+    .half{flex:1 1 420px;min-width:320px;}
+
+    .btn{background:linear-gradient(90deg,var(--primary-color),var(--secondary-color));color:#181818;border:none;border-radius:10px;padding:.75rem 1.4rem;font-weight:600;cursor:pointer;font-size:.95rem;display:inline-flex;align-items:center;gap:.4rem;box-shadow:0 4px 12px rgba(255,152,0,.25);transition:.25s;}
+    .btn:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(255,152,0,.35);}
+    .btn.sec{background:#2a2a2a;color:#eee;box-shadow:none;}
+    .btn.sec:hover{background:#333;}
+
+    .center{text-align:center;}
+    .results{margin-top:2rem;display:none;}
+    .result-success,.result-error{padding:1.25rem 1.25rem 1rem;border-radius:10px;margin-bottom:1rem;font-size:.95rem;line-height:1.4;}
+    .result-success{background:rgba(76,175,80,.12);border:1px solid #4caf50;color:#4caf50;text-align:center;max-width:600px;margin:0 auto 1rem;}
+    .result-error{background:rgba(244,67,54,.12);border:1px solid #f44336;color:#f44336;white-space:pre-wrap;text-align:center;max-width:600px;margin:0 auto 1rem;}
+    pre.output{background:#111;border:1px solid var(--border-color);padding:1rem;border-radius:10px;max-height:350px;overflow:auto;font-size:.85rem;}
+    .badge{display:inline-block;background:#333;padding:.15rem .55rem;border-radius:12px;font-size:.7rem;letter-spacing:.5px;margin-left:.4rem;color:#ffb300;}
+    .small-actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem;}
+    .note{color:#999;font-size:.75rem;margin-top:.6rem;}
+
+    .two-col{display:flex;flex-wrap:wrap;gap:1.25rem;margin-top:1.5rem;}
+    .panel{flex:1 1 380px;background:#202020;border:1px solid var(--border-color);padding:1rem 1.1rem;border-radius:12px;}
+    .panel h4{margin:.2rem 0 .8rem;font-size:1rem;font-weight:600;color:#ffb300;}
+    .stat{font-size:.8rem;color:#bbb;margin:.15rem 0;}
+
+    .loading-overlay{position:absolute;inset:0;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;border-radius:14px;}
+    .loading-overlay.show{display:flex;}
+    .spinner{width:46px;height:46px;border:4px solid #333;border-top-color:#ff9800;border-radius:50%;animation:spin 1s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+
+    /* === RESPONSIVE === */
+    @media (max-width: 768px) {
+      .sidebar{transform:translateX(-100%);}
+      .sidebar.active{transform:translateX(0);}
+      .main-content{margin-left:0;padding:1rem;}
+      .page-title{font-size:2rem;}
+      .converter-card{padding:1.5rem;margin:0 .5rem;}
+    }
+
+    /* Mobile menu toggle */
+    .menu-toggle{display:none;position:fixed;top:1rem;left:1rem;z-index:1001;background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;padding:.5rem;cursor:pointer;font-size:1.5rem;color:var(--text-primary);}
+    @media (max-width: 768px){.menu-toggle{display:block;}}
+  </style>
+</head>
+<body>
+<button class="menu-toggle" id="menuToggle">☰</button>
+<script>
+  // Inject unified sidebar once DOM is ready
+  document.addEventListener('DOMContentLoaded', function(){
+    if (window.injectSidebar) window.injectSidebar('/conversion-inverse');
+  });
+</script>
+<div class="main-content">
+  <div class="page-header">
+    <h1 class="page-title">Conversion PACS008 → MT103</h1>
+    <p class="page-subtitle">Chargez un fichier pacs.008 (XML ISO 20022) ou collez son contenu pour générer un MT103 minimal.</p>
+  </div>
+
+  <section class="converter-card" id="card">
+    <div class="loading-overlay" id="loadingOverlay"><div style="text-align:center"><div class="spinner"></div><div style="margin-top:1rem;font-weight:600;">Conversion en cours...</div></div></div>
+    <div class="flex">
+      <div class="half">
+        <h3 class="section-title">📁 Fichier pacs.008</h3>
+        <div class="upload-area" id="uploadArea">
+          <input type="file" id="fileInput" accept=".xml,text/xml" class="file-input" />
+          <div style="font-size:2.2rem;">📄</div>
+          <div><strong>Cliquez</strong> ou glissez-déposez votre fichier XML</div>
+          <div style="color:#888;font-size:.8rem;margin-top:.4rem;">Max 2MB • XML pacs.008.001.08</div>
+        </div>
+        <div id="fileMeta" style="display:none;margin-top:.75rem;font-size:.8rem;color:#bbb;"></div>
+        <div class="small-actions">
+          <button class="btn sec" id="btnClearFile" style="display:none;">🗑️ Effacer</button>
+          <button class="btn sec" id="btnToText" style="display:none;">↪️ Copier dans zone texte</button>
+        </div>
+      </div>
+      <div class="half">
+        <h3 class="section-title">📝 Contenu XML</h3>
+        <textarea id="xmlText" placeholder="Collez ici le contenu du Document pacs.008 ..."></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.5rem;font-size:.75rem;color:#aaa;">
+          <span id="stats">0 caractères</span>
+          <div style="display:flex;gap:.4rem;">
+            <button class="btn sec" id="btnPaste">📋 Coller</button>
+            <button class="btn sec" id="btnClearText">🗑️ Effacer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="center" style="margin-top:1.8rem;">
+      <button class="btn" id="btnConvert">↩️ Convertir vers MT103</button>
+    </div>
+    <div class="results" id="results">
+      <div id="resultMessage"></div>
+      <div id="outputWrapper" style="display:none;">
+        <h3 class="section-title" style="margin-top:1.2rem;">📦 MT103 généré <span class="badge" id="badgeSize"></span></h3>
+        <pre class="output" id="mt103Output"></pre>
+        <div class="small-actions">
+          <button class="btn" id="btnDownload">💾 Télécharger MT103</button>
+          <button class="btn sec" id="btnCopy">📋 Copier</button>
+        </div>
+        <div class="note">Ce MT103 est une reconstitution simplifiée à partir des éléments disponibles dans le pacs.008.</div>
+      </div>
+    </div>
+  </section>
+</div>
+<script>
+(function(){
+  const uploadArea=document.getElementById('uploadArea');
+  const fileInput=document.getElementById('fileInput');
+  const fileMeta=document.getElementById('fileMeta');
+  const btnClearFile=document.getElementById('btnClearFile');
+  const btnToText=document.getElementById('btnToText');
+  const xmlText=document.getElementById('xmlText');
+  const stats=document.getElementById('stats');
+  const btnPaste=document.getElementById('btnPaste');
+  const btnClearText=document.getElementById('btnClearText');
+  const btnConvert=document.getElementById('btnConvert');
+  const loadingOverlay=document.getElementById('loadingOverlay');
+  const results=document.getElementById('results');
+  const resultMessage=document.getElementById('resultMessage');
+  const mt103Output=document.getElementById('mt103Output');
+  const outputWrapper=document.getElementById('outputWrapper');
+  const btnDownload=document.getElementById('btnDownload');
+  const btnCopy=document.getElementById('btnCopy');
+  const badgeSize=document.getElementById('badgeSize');
+  let currentMT103=null;
+
+  function fmtSize(bytes){if(!bytes) return '0B';const u=['B','KB','MB'];const i=Math.floor(Math.log(bytes)/Math.log(1024));return (bytes/Math.pow(1024,i)).toFixed(2)+' '+u[i];}
+  function updateStats(){stats.textContent=xmlText.value.length+" caractères";}
+  xmlText.addEventListener('input',updateStats);
+  btnPaste.addEventListener('click',()=>navigator.clipboard.readText().then(t=>{xmlText.value=t;updateStats();}));
+  btnClearText.addEventListener('click',()=>{xmlText.value='';updateStats();});
+
+  uploadArea.addEventListener('click',()=>fileInput.click());
+  uploadArea.addEventListener('dragover',e=>{e.preventDefault();uploadArea.classList.add('dragover');});
+  uploadArea.addEventListener('dragleave',()=>uploadArea.classList.remove('dragover'));
+  uploadArea.addEventListener('drop',e=>{e.preventDefault();uploadArea.classList.remove('dragover');if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);});
+  fileInput.addEventListener('change',e=>{if(e.target.files[0]) handleFile(e.target.files[0]);});
+
+  function handleFile(f){
+    if(f.size>2*1024*1024){alert('Fichier trop volumineux (>2MB)');return;}
+    const r=new FileReader();
+    r.onload=ev=>{
+      fileMeta.style.display='block';
+      fileMeta.textContent=`${f.name} • ${fmtSize(f.size)} • ${new Date(f.lastModified).toLocaleDateString()}`;
+      btnClearFile.style.display='inline-flex';
+      btnToText.style.display='inline-flex';
+      uploadArea.classList.add('loaded');
+      uploadArea.querySelector('div:nth-child(2)').textContent=f.name;
+      uploadArea.querySelector('div:nth-child(3)').innerHTML='<span style="color:#4caf50;">Chargé ✔</span>';
+      uploadArea.style.borderColor='#4caf50';
+      uploadArea.style.background='rgba(76,175,80,.08)';
+
+      // Auto-copier immédiatement le contenu du fichier vers la zone de texte
+      xmlText.value = ev.target.result;
+      updateStats();
+
+      // Conserver aussi le bouton explicite si besoin
+      btnToText.onclick=()=>{xmlText.value=ev.target.result;updateStats();};
+    };
+    r.readAsText(f,'UTF-8');
+  }
+  btnClearFile.addEventListener('click',()=>{fileInput.value='';fileMeta.style.display='none';btnClearFile.style.display='none';btnToText.style.display='none';uploadArea.classList.remove('loaded');uploadArea.style.background='var(--bg-surface)';uploadArea.style.borderColor='var(--border-color)';uploadArea.innerHTML='<input type="file" id="fileInput" accept=".xml,text/xml" class="file-input" /><div style="font-size:2.2rem;">📄</div><div><strong>Cliquez</strong> ou glissez-déposez votre fichier XML</div><div style="color:#888;font-size:.8rem;margin-top:.4rem;">Max 2MB • XML pacs.008.001.08</div>';});
+
+  btnConvert.addEventListener('click',()=>{const payload=xmlText.value.trim();if(!payload){alert('Veuillez fournir un contenu XML');return;}loadingOverlay.classList.add('show');fetch('/convert-reverse',{method:'POST',headers:{'Content-Type':'application/xml'},body:payload})
+    .then(r=>r.json())
+    .then(data=>{loadingOverlay.classList.remove('show');results.style.display='block';if(data.success){currentMT103=data.mt103Content;resultMessage.innerHTML='<div class="result-success">✅ Conversion réussie</div>';mt103Output.textContent=data.mt103Content;outputWrapper.style.display='block';badgeSize.textContent=(data.mt103Content.length)+' chars';}else{currentMT103=null;outputWrapper.style.display='none';resultMessage.innerHTML='<div class="result-error">❌ '+(data.errorMessage||'Erreur inconnue')+'</div>';}})
+    .catch(err=>{loadingOverlay.classList.remove('show');results.style.display='block';outputWrapper.style.display='none';resultMessage.innerHTML='<div class="result-error">❌ Erreur réseau: '+err.message+'</div>';});});
+
+  btnDownload.addEventListener('click',()=>{if(!currentMT103){alert('Aucun contenu');return;}const blob=new Blob([currentMT103],{type:'text/plain'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='converted_mt103.txt';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);});
+  btnCopy.addEventListener('click',()=>{if(!currentMT103){return;}navigator.clipboard.writeText(currentMT103).then(()=>{btnCopy.textContent='✅ Copié';setTimeout(()=>btnCopy.textContent='📋 Copier',1500);});});
+})();
+</script>
+</body>
+</html>

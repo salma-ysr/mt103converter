@@ -32,4 +32,5 @@ public interface MT103MsgRepository extends MongoRepository<MT103Msg, String> {
     List<MT103Msg> findTop50ByUsernameOrderByCreatedAtDesc(String username);
     List<MT103Msg> findTop10ByUsernameOrderByCreatedAtDesc(String username);
     List<MT103Msg> findTop3ByUsernameOrderByCreatedAtDesc(String username);
+    List<MT103Msg> findTop5ByUsernameOrderByCreatedAtDesc(String username); // MÉTHODE MANQUANTE AJOUTÉE
 }

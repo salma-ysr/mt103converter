@@ -38,25 +38,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const uploadProgress = document.getElementById('uploadProgress');
     const convertBtn = document.getElementById('convertBtn');
     const loadingOverlay = document.getElementById('loadingOverlay');
-    const resultsSection = document.getElementById('resultsSection');
-    const menuToggle = document.getElementById('menuToggle');
-    const sidebar = document.getElementById('sidebar');
 
-    // Menu mobile
-    if (menuToggle && sidebar) {
-        menuToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('active');
+    // Si sidebar unifiée présente, ne pas dupliquer les gestionnaires de menu
+    if (!window.injectSidebar) {
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('sidebar');
+        if (menuToggle && sidebar) {
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+            });
+        }
+
+        // Fermer sidebar sur mobile
+        document.addEventListener('click', function(event) {
+            if (window.innerWidth <= 768 && sidebar && menuToggle) {
+                if (!sidebar.contains(event.target) && !menuToggle.contains(event.target)) {
+                    sidebar.classList.remove('active');
+                }
+            }
         });
     }
-
-    // Fermer sidebar sur mobile
-    document.addEventListener('click', function(event) {
-        if (window.innerWidth <= 768 && sidebar && menuToggle) {
-            if (!sidebar.contains(event.target) && !menuToggle.contains(event.target)) {
-                sidebar.classList.remove('active');
-            }
-        }
-    });
 
     // Gestionnaire pour fermer l'aperçu
     if (closePreview) {

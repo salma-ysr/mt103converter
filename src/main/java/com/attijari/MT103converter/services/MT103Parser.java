@@ -157,22 +157,17 @@ public class MT103Parser {
         logger.warn("Utilisation de la méthode de fallback pour le parsing");
         Map<String, String> fields = new HashMap<>();
 
-        // Ancienne méthode ligne par ligne comme backup
         String[] lines = rawMessage.split("\\r?\\n");
         String currentTag = null;
         StringBuilder currentValue = new StringBuilder();
 
         for (String line : lines) {
             if (line.startsWith(":")) {
-                // sauvegarder le champ précédent
                 if (currentTag != null) {
                     String cleanValue = currentValue.toString().trim();
-                    // Nettoyer la valeur pour enlever les caractères de fin de bloc
                     cleanValue = cleanValue.replaceAll("\\s*-\\}.*$", "").trim();
                     fields.put(currentTag, cleanValue);
                 }
-
-                // nouveau tag
                 int secondColon = line.indexOf(":", 1);
                 if (secondColon > 1) {
                     currentTag = line.substring(1, secondColon);
@@ -182,12 +177,11 @@ public class MT103Parser {
                     logger.warn("Invalid tag format in line: {}", line);
                 }
             } else if (currentTag != null && !line.trim().startsWith("-}") && !line.trim().startsWith("{5:")) {
-                // ligne sans `:`, ajouter au champ précédent seulement si ce n'est pas la fin du bloc
-                currentValue.append(" ").append(line.trim());
+                // preserve original line breaks instead of spaces
+                currentValue.append("\n").append(line.trim());
             }
         }
 
-        // sauvegarder le dernier champ
         if (currentTag != null) {
             String cleanValue = currentValue.toString().trim();
             cleanValue = cleanValue.replaceAll("\\s*-\\}.*$", "").trim();
